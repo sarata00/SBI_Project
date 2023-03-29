@@ -1,0 +1,5 @@
+BioLip_database/*.zip filter=lfs diff=lfs merge=lfs -text
+BioLip_database/*.txt filter=lfs diff=lfs merge=lfs -text
+BioLip_database/*.psq filter=lfs diff=lfs merge=lfs -text
+BioLip_database/*.fasta filter=lfs diff=lfs merge=lfs -text
+BioLip_database/* filter=lfs diff=lfs merge=lfs -text
