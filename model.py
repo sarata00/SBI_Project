@@ -130,7 +130,7 @@ class ExtractBindingSites:
         # Save the name of the binding site
         #site_name = line.split()[2]
  
-        # Generate a list of the elements (since the first amino acid name to the end of the line)
+        # Generate a list of the elements (from the first amino acid name to the end of the line)
         site_residues = line.split()[4:]
         
         # Save the list of residues in site_residues in the correct format. If the line does not follow the format, continue
