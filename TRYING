@@ -1,0 +1,107 @@
+New fasta_file: ./3bj1_A.fasta
+./3bj1_A.out
+['3bj3C', '3bj3A', '3bj2C', '3bj2A', '1xq5C', '1xq5A', '3bcqC', '3bcqA', '1v4xC', '1v4xA', '1v4wC', '1v4wA', '1v4uC', '1v4uA', '1ouuC', '1ouuA', '1outA', '6rp5A', '4esaC', '4esaA']
+Structure exists: './templates/pdb3bj3.ent' 
+Structure exists: './templates/pdb3bj3.ent' 
+Structure exists: './templates/pdb3bj2.ent' 
+Structure exists: './templates/pdb3bj2.ent' 
+Structure exists: './templates/pdb1xq5.ent' 
+Structure exists: './templates/pdb1xq5.ent' 
+Structure exists: './templates/pdb3bcq.ent' 
+Structure exists: './templates/pdb3bcq.ent' 
+Structure exists: './templates/pdb1v4x.ent' 
+Structure exists: './templates/pdb1v4x.ent' 
+Structure exists: './templates/pdb1v4w.ent' 
+Structure exists: './templates/pdb1v4w.ent' 
+Structure exists: './templates/pdb1v4u.ent' 
+Structure exists: './templates/pdb1v4u.ent' 
+Structure exists: './templates/pdb1ouu.ent' 
+Structure exists: './templates/pdb1ouu.ent' 
+Structure exists: './templates/pdb1out.ent' 
+Structure exists: './templates/pdb6rp5.ent' 
+Structure exists: './templates/pdb4esa.ent' 
+Structure exists: './templates/pdb4esa.ent' 
+New fasta_file: ./3bj1_B.fasta
+./3bj1_B.out
+['1xq5D', '1xq5B', '3bj3D', '3bj3B', '3bj2D', '3bj2B', '2aa1D', '2aa1B', '6hitF', '6hitD', '6hitB', '6hitH', '1pbxB', '4odcB', '4iroD', '4iroB', '1hbhD', '1hbhB', '2h8fD', '2h8fB']
+Structure exists: './templates/pdb1xq5.ent' 
+Structure exists: './templates/pdb1xq5.ent' 
+Structure exists: './templates/pdb3bj3.ent' 
+Structure exists: './templates/pdb3bj3.ent' 
+Structure exists: './templates/pdb3bj2.ent' 
+Structure exists: './templates/pdb3bj2.ent' 
+Structure exists: './templates/pdb2aa1.ent' 
+Structure exists: './templates/pdb2aa1.ent' 
+Structure exists: './templates/pdb6hit.ent' 
+Structure exists: './templates/pdb6hit.ent' 
+Structure exists: './templates/pdb6hit.ent' 
+Structure exists: './templates/pdb6hit.ent' 
+Structure exists: './templates/pdb1pbx.ent' 
+Structure exists: './templates/pdb4odc.ent' 
+Structure exists: './templates/pdb4iro.ent' 
+Structure exists: './templates/pdb4iro.ent' 
+Structure exists: './templates/pdb1hbh.ent' 
+Structure exists: './templates/pdb1hbh.ent' 
+Structure exists: './templates/pdb2h8f.ent' 
+Structure exists: './templates/pdb2h8f.ent' 
+New fasta_file: ./3bj1_C.fasta
+./3bj1_C.out
+['3bj3C', '3bj3A', '3bj2C', '3bj2A', '1xq5C', '1xq5A', '3bcqC', '3bcqA', '1v4xC', '1v4xA', '1v4wC', '1v4wA', '1v4uC', '1v4uA', '1ouuC', '1ouuA', '1outA', '6rp5A', '4esaC', '4esaA']
+Structure exists: './templates/pdb3bj3.ent' 
+Structure exists: './templates/pdb3bj3.ent' 
+Structure exists: './templates/pdb3bj2.ent' 
+Structure exists: './templates/pdb3bj2.ent' 
+Structure exists: './templates/pdb1xq5.ent' 
+Structure exists: './templates/pdb1xq5.ent' 
+Structure exists: './templates/pdb3bcq.ent' 
+Structure exists: './templates/pdb3bcq.ent' 
+Structure exists: './templates/pdb1v4x.ent' 
+Structure exists: './templates/pdb1v4x.ent' 
+Structure exists: './templates/pdb1v4w.ent' 
+Structure exists: './templates/pdb1v4w.ent' 
+Structure exists: './templates/pdb1v4u.ent' 
+Structure exists: './templates/pdb1v4u.ent' 
+Structure exists: './templates/pdb1ouu.ent' 
+Structure exists: './templates/pdb1ouu.ent' 
+Structure exists: './templates/pdb1out.ent' 
+Structure exists: './templates/pdb6rp5.ent' 
+Structure exists: './templates/pdb4esa.ent' 
+Structure exists: './templates/pdb4esa.ent' 
+New fasta_file: ./3bj1_D.fasta
+./3bj1_D.out
+['1xq5D', '1xq5B', '3bj3D', '3bj3B', '3bj2D', '3bj2B', '2aa1D', '2aa1B', '6hitF', '6hitD', '6hitB', '6hitH', '1pbxB', '4odcB', '4iroD', '4iroB', '1hbhD', '1hbhB', '2h8fD', '2h8fB']
+Structure exists: './templates/pdb1xq5.ent' 
+Structure exists: './templates/pdb1xq5.ent' 
+Structure exists: './templates/pdb3bj3.ent' 
+Structure exists: './templates/pdb3bj3.ent' 
+Structure exists: './templates/pdb3bj2.ent' 
+Structure exists: './templates/pdb3bj2.ent' 
+Structure exists: './templates/pdb2aa1.ent' 
+Structure exists: './templates/pdb2aa1.ent' 
+Structure exists: './templates/pdb6hit.ent' 
+Structure exists: './templates/pdb6hit.ent' 
+Structure exists: './templates/pdb6hit.ent' 
+Structure exists: './templates/pdb6hit.ent' 
+Structure exists: './templates/pdb1pbx.ent' 
+Structure exists: './templates/pdb4odc.ent' 
+Structure exists: './templates/pdb4iro.ent' 
+Structure exists: './templates/pdb4iro.ent' 
+Structure exists: './templates/pdb1hbh.ent' 
+Structure exists: './templates/pdb1hbh.ent' 
+Structure exists: './templates/pdb2h8f.ent' 
+Structure exists: './templates/pdb2h8f.ent' 
+              hydrophob_value  surf_acc  ...  L_repulsive  L_attractive
+residue_name                             ...                           
+A_SER1                   -0.8     -0.19  ...          0.0      2.500000
+A_LEU2                    3.8      0.60  ...          0.0      0.666667
+A_SER3                   -0.8     -0.19  ...          0.0      1.500000
+A_SER4                   -0.8     -0.19  ...          0.0      1.000000
+A_LYS5                   -3.9     -1.62  ...          0.0      1.000000
+...                       ...       ...  ...          ...           ...
+D_GLY142                 -0.4      0.43  ...          0.0      1.000000
+D_LYS143                 -3.9     -1.62  ...          0.0      0.000000
+D_GLN144                 -3.5     -0.69  ...          0.0      0.000000
+D_TYR145                 -1.3     -0.15  ...          0.0      0.000000
+D_HIS146                 -3.2     -0.31  ...          0.0      0.000000
+
+[574 rows x 27 columns]

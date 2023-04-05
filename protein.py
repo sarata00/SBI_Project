@@ -10,7 +10,12 @@ class Protein:
   
   def __init__(self, pdbfile):
     self.file_name = pdbfile
-    self.protein_id = pdbfile.split('/')[-1].split('.')[0]
+
+    if '/' in pdbfile:
+      self.protein_id = pdbfile.split('/')[-1].split('.')[0]
+    else:
+      self.protein_id = pdbfile.split('.')[0]
+      
     self.structure = self.read_pdb(self.protein_id, self.file_name) # read pdb
     self.dataframe_info()
 

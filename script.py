@@ -8,8 +8,7 @@ from Bio.SeqUtils.ProtParam import ProteinAnalysis, ProtParamData
 from Bio.PDB import NeighborSearch
 from Bio.PDB import PDBList
 from protein import Protein
-from properties import ProteinFeatures
-from interactions import Interactions
+from properties import ProteinFeatures, Interactions, Layer
 from BLAST import BLAST
 from model import RandomForestModel, ExtractBindingSites
 
@@ -58,7 +57,7 @@ def main():
 
         list_homologs = templ.search_homologs(fasta_file)
 
-        if list_homologs:
+        if list_homologs != None:
 
             list_new = []
 
@@ -82,7 +81,7 @@ def main():
                 for pdb in list_homologs_final:
                     # Extract the first four characters of each PDB ID
                     pdb_id = pdb[:4]
-                    print(pdb_id)
+                    #print(pdb_id)
                 
                     # Download the PDB file in .ent format
                     f = pdbl.retrieve_pdb_file(pdb_id, pdir = path, file_format="pdb")
@@ -96,9 +95,10 @@ def main():
                     #p = Protein(f)
 
         else:
-            print(f"No homologs could be retrieved from {fasta_file}")
 
-    
+            print(f"No homologs could be retrieved from {fasta_file}, stop the program")
+            exit(3)
+
     # MAYBE PUT AN IF HERE IN TERMS OF IF IT HAS NOT FOUND ANY TEMPLATES TO STOP PROGRAM
 
     # 3. COMPUTING QUERY FEATURES
@@ -124,6 +124,8 @@ def main():
         raise
     
     sys.stderr.write('Query protein features calculated successfully.\n') if options.verbose else None
+
+    print(target_protein.dataframe)
     
     #print(target_protein.dataframe)
 

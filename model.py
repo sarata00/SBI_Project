@@ -64,10 +64,10 @@ class RandomForestModel:
             res =  chain_id + '_' + resname + str(resnum)
 
             if res in list_binding_sites:
-              protein_object.dataframe.loc[res,'Label'] = '1'
+              protein_object.dataframe.loc[res,'Label'] = 1
         
             else:
-              protein_object.dataframe.loc[res,'Label'] = '0'
+              protein_object.dataframe.loc[res,'Label'] = 0
         
       df_list.append(protein_object.dataframe)
     
@@ -115,6 +115,59 @@ class RandomForestModel:
     f1 = f1_score(y_test, y_prediction, average='macro')
     
     return accuracy, precision, recall, f1
+
+
+
+'''
+# Faz a predição a partir do vetor de probabilidades de um classificador
+  def predict_prob(self,prob_vector, threshold):
+      pred_vector = []
+      for prob in prob_vector:
+          if prob < threshold:
+              pred_vector.append(0)
+          else:
+              pred_vector.append(1)
+      return pred_vector
+
+  # voting using calssification matrix
+  def voting(self, binary_matrix, treshold):
+      binary_matrix = binary_matrix.T
+      confidence = []
+      for i in range(binary_matrix.shape[0]):
+          # computa a porcentagem de classificadores na votacao
+          confidence.append(np.sum(binary_matrix[i])/float(binary_matrix[i].shape[0]))#
+      return self.predict_prob(confidence, treshold)
+
+  def balanced_prediction(self, protein, out_dir, naccess):
+      # search and store templates matricies
+      self.set_train_data(protein, naccess)
+      pos_data, neg_data, N_PARTITIONS = self.split_data(self.train_set)
+      # shuffle negative index
+      permuted_indices = np.random.permutation(len(neg_data))
+      # matrix with class values foa all predictions
+      # each line is a prediction of one ensenble
+      class_matrix = []
+      for i in range(N_PARTITIONS):
+          # Concat positive and a fragment os negative instances
+          final_matrix = pd.concat([pos_data, neg_data.iloc[permuted_indices[i::N_PARTITIONS]]])
+          class_model = self.get_model(final_matrix)
+          # probability_vector
+          probs = class_model.predict_proba(protein.matrix)[:,1]
+          # voting probabilities
+          class_matrix.append(self.predict_prob(probs, 0.5))
+          # cleaning memory
+          del class_model
+      # Fzendo predicao final usando a combinacao dos ensembles
+      vector_pred = self.voting(np.array(class_matrix), 0.5)
+      protein.matrix['prediction'] = vector_pred
+      protein.matrix.to_csv(out_dir + os.path.basename(protein.file_name).replace('.pdb', '.csv'), columns=['prediction'])
+
+
+'''
+
+
+
+
 
 
 
