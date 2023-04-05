@@ -47,7 +47,7 @@ def main():
     if not os.path.exists(path):
         os.makedirs(path)
     
-    # BLAST
+    # 1.1 BLAST
     templ = BLAST('../BioLip_database/biolip_database')
 
     # Download our target fasta file
@@ -70,9 +70,9 @@ def main():
                 list_homologs_final = list_new[:20]
 
 
-            # 1.1 COMPUTING TEMPLATE FEATURES
+            # 1.2 COMPUTING TEMPLATE FEATURES
             if list_homologs_final:
-
+                
                 print(list_homologs_final)            
 
             # Extract the PDBs of each template
@@ -81,10 +81,19 @@ def main():
                 for pdb in list_homologs_final:
                     # Extract the first four characters of each PDB ID
                     pdb_id = pdb[:4]
-                    #print(pdb_id)
+                    print(pdb)
                 
                     # Download the PDB file in .ent format
                     f = pdbl.retrieve_pdb_file(pdb_id, pdir = path, file_format="pdb")
+                    
+                    # Obtain chains from PDB file
+                    template = Protein(f)
+                    template.get_pdb_chains()
+
+                    if pdb in 
+
+                    template_dataset = RandomForestModel().get_training_data(template)
+                    print(template_dataset)
 
                     # Convert the .ent file to .pdb format
                     #input_path = os.path.join("templates", f"pdb{pdb_id}.ent")
@@ -105,13 +114,13 @@ def main():
     sys.stderr.write('Calculating query protein features...\n') if options.verbose else None
 
     try:
+        # Computing residue and atom features
         target_protein_features = ProteinFeatures(target_protein, './atom_types.csv')
         target_protein_features.residue_properties()
         target_protein_features.atom_properties()
         target_protein_features.is_cysteine()
 
-        # Computing interactions:
-
+        # Computing interactions
         target_protein_interactions = Interactions(target_protein, './atom_types.csv')
         target_protein_interactions.calculate_interactions()
 

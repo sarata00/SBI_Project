@@ -4,6 +4,9 @@ import sys
 import Bio.PDB
 from Bio.SeqUtils.ProtParam import ProteinAnalysis, ProtParamData
 from Bio.PDB import NeighborSearch
+from Bio.PDB import PDBParser
+from Bio.PDB.PDBIO import PDBIO
+from io import StringIO
 
 # Class
 class Protein:
@@ -64,8 +67,22 @@ class Protein:
       dict_seq[chain_id] = sequence 
     
     return dict_seq
-      
-    
+  
+
+  def get_pdb_chains(self):
+
+    pdb_chains = self.structure.get_chains()
+    prot_id = self.structure.get_id()
+
+    # create folder where we store chains
+    folder_name = str('./' + prot_id + '_chains')
+    if not os.path.exists(folder_name):
+      os.makedirs(folder_name)
+
+    for chain in pdb_chains:
+        io = PDBIO()
+        io.set_structure(chain)
+        io.save(folder_name + '/' + prot_id + chain.get_id() + ".pdb")
 
 ######################################################################
   # Gets the fasta sequence of each chain

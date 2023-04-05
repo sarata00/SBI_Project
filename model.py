@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from protein import Protein
 from properties import ProteinFeatures, Interactions, Layer
-from Bio.PDB import PDBList
+import Bio.PDB
 from Bio.SeqUtils.ProtParam import ProteinAnalysis, ProtParamData
 import pandas as pd
 import numpy as np
@@ -20,13 +20,40 @@ class RandomForestModel:
 ######################################################################
 
 
-  def __init__(self, directory):
-    self.directory =  directory
+#  def __init__(self, directory):
+#    self.directory =  directory
 
+  def __init__(self):
+    #self.directory =  directory
+    pass
   
   def get_training_data(self, protein_object):
     
+    # 0. AVOID REDUNDANT CALCULATIONS
+    # Since we are working with chains separately, it is possible
+    # that each chain has high similarity with others in terms of
+    # homologous templates found after BLAST. So, we want to avoid
+    # calculating features for a chain template, which is time expensive,
+    # if these have already been calculated in a previous other chain
+
+    
+
+    # we start by creating a folder where the template datasets will be stored
+    if not os.path.exists('./template_datasets'):
+      os.makedirs('./template_datasets/')
+
+    # if the folder already exists, we check if the csv with the features already exists  
+    else:
+      for filename in os.listdir('./template_datasets'):
+      # Check if the search string is part of the filename
+        if protein_object.protein_id[3:] in filename:
+        # If it is, print the filename
+          return protein_object.protein_id[3:], "has already been calculated"
+
     # 1. COMPUTE FEATURES OF EACH TEMPLATE
+    # Calling data frame to add residues as first column
+    #protein_object.dataframe_info()
+
     # Computing residue and atom features
     p_features = ProteinFeatures(protein_object, './atom_types.csv')
     p_features.residue_properties()
@@ -46,7 +73,7 @@ class RandomForestModel:
 
     # 2. EXTRACT THE SITE LABELS OF THE TEMPLATE
     protein_object.dataframe["Label"] = pd.Series(dtype=int)
-    list_binding_sites = ExtractBindingSites(protein_object).extract_binding_sites()
+    list_binding_sites = ExtractBindingSites().extract_binding_sites(protein_object)
 
     if list_binding_sites:
 
@@ -69,7 +96,7 @@ class RandomForestModel:
             else:
               protein_object.dataframe.loc[res,'Label'] = 0
         
-      df_list.append(protein_object.dataframe)
+      df_list.append((protein_object.protein_id, protein_object.dataframe))
     
     else:
       print("WE SHOULD REMOVE THIS TEMPLATE IT HAS NO BINDING SITES LABELS")
@@ -78,7 +105,23 @@ class RandomForestModel:
     train_df = pd.DataFrame()
 
     if df_list:
-      train_df = pd.concat(df_list, axis = 0)
+      
+      # Create empty list to append only dataframes
+      only_df_list = []
+
+      for protein in df_list:
+
+        file_name = protein[0]
+        protein_id = file_name[3:]
+        df = protein[1]
+
+        df.to_csv('./template_datasets/' + protein_id + '.csv')
+
+        # appending dataframe to only_df_list
+        only_df_list.append(df)
+
+      # now actually creating whole template set by concatenating all dfs
+      train_df = pd.concat(only_df_list, axis = 0)
 
     return train_df
 
@@ -224,8 +267,8 @@ class ExtractBindingSites:
           
           binding_sites[site_name] += site_residues
 
-      else:
-          print("No SITE section")
+      #else:
+       #   print("No SITE section")
           
     if line_site > 0:
 
