@@ -2,11 +2,14 @@ import pandas as pd
 import os
 import sys
 import argparse
+import subprocess
 import Bio.PDB
 from Bio.SeqUtils.ProtParam import ProteinAnalysis, ProtParamData
+from Bio.PDB import NeighborSearch
 from Bio.PDB import PDBList
 from protein import Protein
-from properties import ProteinFeatures, Interactions, Layer
+from properties import ProteinFeatures
+from interactions import Interactions
 from BLAST import BLAST
 from model import RandomForestModel, ExtractBindingSites
 
@@ -15,7 +18,7 @@ def main():
     # COMMAND FROM COMMAND-LINE
     ## name_program.py -p < protein_pdb > -db < biolip_db > (-a < atom_types_file -o < out_file > ??)
 
-    parser = argparse.ArgumentParser(description= "HERE WE NEED TO EXPLAIN WHAT THE PROGRAM DOES")
+    parser = argparse.ArgumentParser(description= " This program does this")
 
     parser.add_argument('-p', dest = 'protein_file', default = None, required = True, help = 'Path to input PDB file')
     #parser.add_argument('-db', dest = 'BioLip_db', default = None, required = True, help = 'Path to the Biolip database, which is used to do the BLAST')
@@ -36,16 +39,22 @@ def main():
 
     else:
         print("PDB file needed")
-    
 
     # 1. COMPUTING TEMPLATES
     sys.stderr.write('Searching homologous templates to query protein...\n') if options.verbose else None
 
+    # Create a folder to store everything related to the templates:
+    path = "./templates"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    
+    # BLAST
     templ = BLAST('../BioLip_database/biolip_database')
 
+    # Download our target fasta file
     for fasta_file in target_protein.write_fasta_file(): 
 
-        print("New fasta_file")
+        print(f"New fasta_file: {fasta_file}")
 
         list_homologs = templ.search_homologs(fasta_file)
 
@@ -61,26 +70,35 @@ def main():
             if len(list_new) >= 20:
                 list_homologs_final = list_new[:20]
 
+
             # 1.1 COMPUTING TEMPLATE FEATURES
             if list_homologs_final:
-                print(list_homologs_final)
 
-                # Create a folder to store all the templates PDBs
-                path = "./templates"
-                if not os.path.exists(path):
-                    os.makedirs(path)
+                print(list_homologs_final)            
 
-                # Extract the PDBs of each template
+            # Extract the PDBs of each template
                 pdbl = PDBList()
 
-                for pdb_id in list_homologs_final:
-                    f = pdbl.retrieve_pdb_file(pdb_id, pdir = path, file_format="pdb")   # en GRASP los comprimen, tal vez es buena idea para no petar de espacio
+                for pdb in list_homologs_final:
+                    # Extract the first four characters of each PDB ID
+                    pdb_id = pdb[:4]
+                    print(pdb_id)
+                
+                    # Download the PDB file in .ent format
+                    f = pdbl.retrieve_pdb_file(pdb_id, pdir = path, file_format="pdb")
+
+                    # Convert the .ent file to .pdb format
+                    #input_path = os.path.join("templates", f"pdb{pdb_id}.ent")
+                    #output_path = os.path.join("templates", f"pdb{pdb_id}.pdb")
+                    #subprocess.call(["pdb4amber", "-i", input_path, "-o", output_path])
+            
                     # Create a Protein object for each template
-                    p = Protein(f)      
+                    #p = Protein(f)
 
         else:
-            print("No homologs could be retrieved from " + fasta_file)
+            print(f"No homologs could be retrieved from {fasta_file}")
 
+    
     # MAYBE PUT AN IF HERE IN TERMS OF IF IT HAS NOT FOUND ANY TEMPLATES TO STOP PROGRAM
 
     # 3. COMPUTING QUERY FEATURES
@@ -109,24 +127,17 @@ def main():
     
     #print(target_protein.dataframe)
 
-
-
-
-
-        # WE HAVE TO RETRIEVE THE PDB FROM PDB???
-    
-
     # Test the Random Forest model
-    rf = RandomForestModel("./templates")
-    template_dataframe = rf.get_training_data(p)
+    #rf = RandomForestModel("./templates")
+    #template_dataframe = rf.get_training_data(p)
 
-    print(f"This is the template_df:\n {template_dataframe}")
-    print(f"Starting with predictions .......")
-    templ_predictions = rf.get_predictions(p)
-    y_test = rf.split_data(template_dataframe).y_test
-    accuracy = rf.model_evaluation(templ_predictions, y_test).accuracy
+    #print(f"This is the template_df:\n {template_dataframe}")
+   # print(f"Starting with predictions .......")
+    #templ_predictions = rf.get_predictions(p)
+    #y_test = rf.split_data(template_dataframe).y_test
+    #accuracy = rf.model_evaluation(templ_predictions, y_test).accuracy
 
-    print(f"Model accuracy: {accuracy}")
+    #print(f"Model accuracy: {accuracy}")
 
     # Now depending on the accuracy of the model, use it to 
     # predict the binding sites of our target:
@@ -134,13 +145,11 @@ def main():
     # target_model = rf.get_training_data(target_protein)
     # target_prediction = rf.get_predictions(target_protein)
 
-
-
+    
 
 
     
 if __name__ == '__main__':
-    
     main()
 
 
