@@ -1,11 +1,10 @@
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from protein import Protein, ProteinFeatures
-from interactions import Interactions
+from protein import Protein
+from properties import ProteinFeatures, Interactions, Layer
 from Bio.PDB import PDBList
 from Bio.SeqUtils.ProtParam import ProteinAnalysis, ProtParamData
-from Bio.PDB import NeighborSearch
 import pandas as pd
 import numpy as np
 import sys
@@ -27,15 +26,25 @@ class RandomForestModel:
   
   def get_training_data(self, protein_object):
     
-    # Compute the features, interactions ... of each template
+    # 1. COMPUTE FEATURES OF EACH TEMPLATE
+    # Computing residue and atom features
     p_features = ProteinFeatures(protein_object, './atom_types.csv')
     p_features.residue_properties()
     p_features.atom_properties()
     p_features.is_cysteine()
+
+    # Computing interactions:
+    p_interactions = Interactions(protein_object, './atom_types.csv')
+    p_interactions.calculate_interactions()
+
+    # Compute layer features (atom and residue properties, and interactions)
+    p_layer = Layer(protein_object, './atom_types.csv')
+    p_layer.get_layer_properties()
+
     df_list = []
 
 
-    # Extract the SITE labels of the template
+    # 2. EXTRACT THE SITE LABELS OF THE TEMPLATE
     protein_object.dataframe["Label"] = pd.Series(dtype=int)
     list_binding_sites = ExtractBindingSites(protein_object).extract_binding_sites()
 
