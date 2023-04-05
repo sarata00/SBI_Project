@@ -4,10 +4,9 @@ import sys
 import argparse
 import Bio.PDB
 from Bio.SeqUtils.ProtParam import ProteinAnalysis, ProtParamData
-from Bio.PDB import NeighborSearch
 from Bio.PDB import PDBList
-from protein import Protein, ProteinFeatures
-from interactions import Interactions
+from protein import Protein
+from properties import ProteinFeatures, Interactions, Layer
 from BLAST import BLAST
 from model import RandomForestModel, ExtractBindingSites
 
@@ -45,11 +44,17 @@ def main():
     target_protein_features.residue_properties()
     target_protein_features.atom_properties()
     target_protein_features.is_cysteine()
+
+    # Computing interactions:
+
+    target_protein_interactions = Interactions(target_protein, './atom_types.csv')
+    target_protein_interactions.calculate_interactions()
+
+    # Compute layer features (atom and residue properties, and interactions)
+    target_protein_layer = Layer(target_protein, './atom_types.csv')
+    target_protein_layer.get_layer_properties()
     
     print(target_protein.dataframe)
-
-    # Compute the layers and interactions
-
 
     # Computing templates:
     templ = BLAST('./myproteindb')
