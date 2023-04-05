@@ -1,4 +1,3 @@
-
 import os
 import sys
 import subprocess
@@ -23,8 +22,8 @@ class BLAST:
             # Define the BLAST command
             out_file = input_file.replace('.fasta', '.out')
             print(out_file)
-            blast_cmd = f"blastp -query {input_file} -db {self.db_path} -evalue {evalue} -outfmt 6 -out {out_file}"
-
+            blast_cmd = f"blastp -query {input_file} -db {self.db_path} -evalue {evalue} -outfmt 6 -out templates/{out_file}"
+            
             # Run the BLAST command
             try:
                 result = subprocess.run(blast_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, check=True)
@@ -35,8 +34,8 @@ class BLAST:
         
 
             # Get homologs from BLAST result file
-            if os.path.exists(out_file):
-                homologs = BlastResult(out_file).get_result()
+            if os.path.exists(f"templates/{out_file}"):
+                homologs = BlastResult(f"templates/{out_file}").get_result()
                 templates = len(homologs)
             else:
                 print(f"Error: BLAST output file {out_file} not found")
