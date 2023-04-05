@@ -5,8 +5,9 @@ import argparse
 import Bio.PDB
 from Bio.SeqUtils.ProtParam import ProteinAnalysis, ProtParamData
 from Bio.PDB import NeighborSearch
-from protein import Protein
-from properties import ProteinFeatures, Interactions, Layer
+from Bio.PDB import PDBList
+from protein import Protein, ProteinFeatures
+from interactions import Interactions
 from BLAST import BLAST
 from model import RandomForestModel, ExtractBindingSites
 
@@ -38,23 +39,16 @@ def main():
     else:
         print("PDB file needed")
     
-    # Computing residue and atom properties:
+    # Computing properties:
 
     target_protein_features = ProteinFeatures(target_protein, './atom_types.csv')
     target_protein_features.residue_properties()
     target_protein_features.atom_properties()
     target_protein_features.is_cysteine()
-
-    # Computing interactions:
-
-    target_protein_interactions = Interactions(target_protein, './atom_types.csv')
-    target_protein_interactions.calculate_interactions()
     
     print(target_protein.dataframe)
 
-    # Compute layer features (atom and residue properties, and interactions)
-    target_protein_layer = Layer(target_protein, './atom_types.csv')
-    target_protein_layer.get_layer_properties()
+    # Compute the layers and interactions
 
 
     # Computing templates:
@@ -77,13 +71,48 @@ def main():
             list_homologs_final = list_new[:20]
 
         print(list_homologs_final)
+        
+    
+    # Calculate template features:
+    if list_homologs_final:
+      # Create a folder to store all the templates PDBs
+      path = "./templates"
+      if not os.path.exists(path):
+        os.makedirs(path)
+      
+      # Extract the PDBs of each template
+      pdbl = PDBList()
+      
+
+      for pdb_id in list_homologs_final:
+        f = pdbl.retrieve_pdb_file(pdb_id, pdir = path, file_format="pdb")   # en GRASP los comprimen, tal vez es buena idea para no petar de espacio
+        # Create a Protein object for each template
+        p = Protein(f)
+
+
+
 
 
         # WE HAVE TO RETRIEVE THE PDB FROM PDB???
     
 
+    # Test the Random Forest model
+    rf = RandomForestModel("./templates")
+    template_dataframe = rf.get_training_data(p)
 
-    
+    print(f"This is the template_df:\n {template_dataframe}")
+    print(f"Starting with predictions .......")
+    templ_predictions = rf.get_predictions(p)
+    y_test = rf.split_data(template_dataframe).y_test
+    accuracy = rf.model_evaluation(templ_predictions, y_test).accuracy
+
+    print(f"Model accuracy: {accuracy}")
+
+    # Now depending on the accuracy of the model, use it to 
+    # predict the binding sites of our target:
+
+    # target_model = rf.get_training_data(target_protein)
+    # target_prediction = rf.get_predictions(target_protein)
 
 
 
