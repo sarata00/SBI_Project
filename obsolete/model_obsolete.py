@@ -2,7 +2,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from protein import Protein
-from residue_transformation import aa_conversion
 from properties import ProteinFeatures, Interactions, Layer
 import Bio.PDB
 from Bio.SeqUtils.ProtParam import ProteinAnalysis, ProtParamData
@@ -10,8 +9,6 @@ import pandas as pd
 import numpy as np
 import sys
 import os
-import requests
-from bs4 import BeautifulSoup
 
 
 class RandomForestModel:
@@ -39,6 +36,8 @@ class RandomForestModel:
     # calculating features for a chain template, which is time expensive,
     # if these have already been calculated in a previous other chain
 
+    
+
     # we start by creating a folder where the template datasets will be stored
     if not os.path.exists('./template_datasets'):
       os.makedirs('./template_datasets/')
@@ -49,7 +48,7 @@ class RandomForestModel:
       # Check if the search string is part of the filename
         if protein_object.protein_id[3:] in filename:
         # If it is, print the filename
-          return str(protein_object.protein_id[3:], "has already been calculated")
+          return protein_object.protein_id[3:], "has already been calculated"
 
     # 1. COMPUTE FEATURES OF EACH TEMPLATE
     # Calling data frame to add residues as first column
@@ -74,13 +73,7 @@ class RandomForestModel:
 
     # 2. EXTRACT THE SITE LABELS OF THE TEMPLATE
     protein_object.dataframe["Label"] = pd.Series(dtype=int)
-
-    protein_id = str(protein_object.structure.get_id())[3:7]
-    chain_id = str(protein_object.structure.get_id())[7]
-
-    print(protein_id, chain_id)
-
-    list_binding_sites = ExtractBindingSites().extract_binding_sites(protein_id, chain_id)
+    list_binding_sites = ExtractBindingSites().extract_binding_sites(protein_object)
 
     if list_binding_sites:
 
@@ -106,7 +99,7 @@ class RandomForestModel:
       df_list.append((protein_object.protein_id, protein_object.dataframe))
     
     else:
-      print("WARNING: THIS TEMPLATE HAS NO BINDING SITES LABELS AND SHOULD BE REMOVED")
+      print("WE SHOULD REMOVE THIS TEMPLATE IT HAS NO BINDING SITES LABELS")
 
     # Create the template set
     train_df = pd.DataFrame()
@@ -231,53 +224,57 @@ class ExtractBindingSites:
   # Output: dictionary with binding sites
 ######################################################################
 
-  def extract_binding_sites(self, protein_id, chain_id):
+  def extract_binding_sites(self, protein):
 
-    # set up the URL of the BioLip site page
-    url = "https://zhanggroup.org/BioLiP/pdb.cgi?pdb={}&chain={}&bs=BS01".format(protein_id, chain_id)
+    # Create a dictionary to store the binding sites
+    binding_sites = {}
 
-    # make a request to the page and retrieve the HTML content
-    response = requests.get(url)
-    content = response.content
+    # Use the PDB file to extract the binding sites
+    with open(protein.file_name, 'r') as f:
 
-    # parse the HTML content using BeautifulSoup
-    soup = BeautifulSoup(content, 'html.parser')
+      pdb_f = f.read()
 
-    # Find the tr tag that contains the specified text
-    bindres_line = soup.find(string='(original residue number in PDB)').parent.parent
+    # Condition to avoid errors if the file does not contain 'SITE' lines
+    line_site = 0
 
-    # Get the string containing the residues
-    residue_str = bindres_line.text.strip()
 
-    residues = residue_str.split(')')[1:]
-    residues = residues[0]
-    residues = residues.split(' ')
+    for line in pdb_f.split('\n'):
 
-    # Converting residue names into data frame style
-    residue_symbol = ''
-    final_residues = []
+      if line.startswith('SITE'):
 
-    for residue in residues:
-      res_num = residue[1:]
-      one_let_res = residue[0]
-      three_let_res = convert_residue(one_let_res)
-
-      residue_symbol = str(chain_id + '_' + three_let_res + res_num)
-      final_residues.append(residue_symbol)
-
-      return final_residues
+        #Counter of SITE lines
+        line_site += 1
+        
+        # Save the name of the binding site
+        site_name = line.split()[2]
+ 
+        # Generate a list of the elements (since the first amino acid name to the end of the line)
+        site_residues = line.split()[4:]
+        
+        # Save the list of residues in site_residues in the correct format. If the line does not follow the format, continue
+        try: 
+          # Format: A_Ser1 (example)
+          site_residues = [f"{site_residues[i+1]}_{site_residues[i]}{site_residues[i+2]}" for i in range(0, len(site_residues), 3)]
+          
+        except Exception as error:
+          continue
     
+        if site_name not in binding_sites:
 
+          binding_sites[site_name] = site_residues
 
-### ASIDE FUNCTIONS
+        else:
+          
+          binding_sites[site_name] += site_residues
 
-######################################################################
-  # Converts 1-letter residues to 3-letter residues
-  # Input: 1-letter residue
-  # Output: 3-letter residue
-######################################################################
+      #else:
+       #   print("No SITE section")
+          
+    if line_site > 0:
 
-def convert_residue(residue):
+      # Return the binding sites dictionary
+      return binding_sites
 
-  converted_residue = aa_conversion[residue]
-  return converted_residue
+    else:
+
+      return None

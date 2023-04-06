@@ -81,19 +81,35 @@ def main():
                 for pdb in list_homologs_final:
                     # Extract the first four characters of each PDB ID
                     pdb_id = pdb[:4]
-                    print(pdb)
+                    print('Current pdb chain is', pdb)
                 
                     # Download the PDB file in .ent format
                     f = pdbl.retrieve_pdb_file(pdb_id, pdir = path, file_format="pdb")
                     
                     # Obtain chains from PDB file
                     template = Protein(f)
-                    template.get_pdb_chains()
+                    template.get_pdb_chains() # this produces the chain_directory mentioned below
+                    pdb_id = template.structure.get_id()
 
-                    if pdb in 
-
-                    template_dataset = RandomForestModel().get_training_data(template)
+                    chain_directory = str('./' + pdb_id + '_chains')
+                    print('We have created the folder', str(chain_directory), 'to store the chains of', pdb_id)
+                    
+                    # now checking if current chain name is in the directory as a pdb chain file
+                    template_chain = ''
+                    for file_name in os.listdir(chain_directory):
+                        if pdb in file_name:
+                            print('current file name is', file_name, 'which matches with', pdb)
+                            template_chain = Protein(str(chain_directory + '/' + file_name))
+                    
+                    template_dataset = RandomForestModel().get_training_data(template_chain)
                     print(template_dataset)
+
+                    # we delete folder with chains because we want to avoid accumulation of folders
+                    try:
+                        os.rmdir(chain_directory)
+                        print(f"Directory {chain_directory} was successfully removed.")
+                    except OSError as e:
+                        print(f"Error: {chain_directory} : {e.strerror}")
 
                     # Convert the .ent file to .pdb format
                     #input_path = os.path.join("templates", f"pdb{pdb_id}.ent")

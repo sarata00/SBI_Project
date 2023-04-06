@@ -7,6 +7,7 @@ from Bio.PDB import NeighborSearch
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
 from io import StringIO
+from residue_transformation import aa_conversion
 
 # Class
 class Protein:
@@ -68,6 +69,11 @@ class Protein:
     
     return dict_seq
   
+######################################################################
+  # Gets the pdb sequence of each chain
+  # Input: protein pdb file
+  # Output: folder with pdb files for each chain
+######################################################################
 
   def get_pdb_chains(self):
 
@@ -172,3 +178,16 @@ class Protein:
             neighborhood_set.add(neighbor)
     
     return neighborhood_set
+
+### ASIDE FUNCTIONS
+
+######################################################################
+  # Converts 1-letter residues to 3-letter residues
+  # Input: 1-letter residue
+  # Output: 3-letter residue
+######################################################################
+
+  def convert_residue(residue):
+
+    converted_residue = aa_conversion[residue]
+    return converted_residue
