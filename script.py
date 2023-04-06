@@ -11,6 +11,7 @@ from protein import Protein
 from properties import ProteinFeatures, Interactions, Layer
 from BLAST import BLAST
 from model import RandomForestModel, ExtractBindingSites
+import shutil # remove directory with files
 
 
 def main():
@@ -33,27 +34,40 @@ def main():
     if os.path.isfile(options.protein_file) and options.protein_file.endswith('.pdb'):
 
         target_protein = Protein(options.protein_file)
-
-        sys.stderr.write('Starting prediction of ' + target_protein.file_name + '\n') if options.verbose else None
+        
+        sys.stderr.write(' -----------------------------------\n') if options.verbose else None
+        sys.stderr.write('                                                             \n') if options.verbose else None
+        sys.stderr.write('  STARTING PREDICTION OF ' + target_protein.file_name + '    \n') if options.verbose else None
+        sys.stderr.write('                                                             \n') if options.verbose else None
+        sys.stderr.write(' -----------------------------------\n\n') if options.verbose else None
 
     else:
         print("PDB file needed")
 
-    # 1. COMPUTING TEMPLATES
-    sys.stderr.write('Searching homologous templates to query protein...\n') if options.verbose else None
+    ##########################
+    #                        #
+    # 1. COMPUTING TEMPLATES #
+    #                        #
+    ##########################
+    sys.stderr.write('--------------------------------------------------\n') if options.verbose else None
+    sys.stderr.write('Searching homologous proteins to query sequence...\n') if options.verbose else None
+    sys.stderr.write('--------------------------------------------------\n\n') if options.verbose else None
 
     # Create a folder to store everything related to the templates:
     path = "./templates"
     if not os.path.exists(path):
         os.makedirs(path)
-    
+
+    ###########
     # 1.1 BLAST
+    ###########
+
     templ = BLAST('../BioLip_database/biolip_database')
 
     # Download our target fasta file
     for fasta_file in target_protein.write_fasta_file(): 
 
-        print(f"New fasta_file: {fasta_file}")
+        sys.stderr.write(f"Working on following chain: {fasta_file}\n\n") if options.verbose else None
 
         list_homologs = templ.search_homologs(fasta_file)
 
@@ -69,19 +83,25 @@ def main():
             if len(list_new) >= 20:
                 list_homologs_final = list_new[:20]
 
-
+            #################################
             # 1.2 COMPUTING TEMPLATE FEATURES
+            #################################
+
             if list_homologs_final:
                 
-                print(list_homologs_final)            
+                sys.stderr.write('Top 20 homologous sequences found:') if options.verbose else None
+                sys.stderr.write(f"{' '.join(list_homologs_final)}\n") if options.verbose else None        
 
-            # Extract the PDBs of each template
+                # Extract the PDBs of each template
                 pdbl = PDBList()
 
+                # Creating empty list to store data frames
+                dataframes_list = []
+
                 for pdb in list_homologs_final:
+
                     # Extract the first four characters of each PDB ID
                     pdb_id = pdb[:4]
-                    print('Current pdb chain is', pdb)
                 
                     # Download the PDB file in .ent format
                     f = pdbl.retrieve_pdb_file(pdb_id, pdir = path, file_format="pdb")
@@ -92,24 +112,42 @@ def main():
                     pdb_id = template.structure.get_id()
 
                     chain_directory = str('./' + pdb_id + '_chains')
-                    print('We have created the folder', str(chain_directory), 'to store the chains of', pdb_id)
+                    sys.stderr.write(f"We have created the folder {chain_directory} to store the chains of {pdb_id}\n")
                     
                     # now checking if current chain name is in the directory as a pdb chain file
                     template_chain = ''
                     for file_name in os.listdir(chain_directory):
                         if pdb in file_name:
-                            print('current file name is', file_name, 'which matches with', pdb)
+
+                            sys.stderr.write(f"PDB file for {pdb} could be obtained. Now calculating chain features...\n")
                             template_chain = Protein(str(chain_directory + '/' + file_name))
                     
                     template_dataset = RandomForestModel().get_training_data(template_chain)
-                    print(template_dataset)
 
                     # we delete folder with chains because we want to avoid accumulation of folders
                     try:
-                        os.rmdir(chain_directory)
-                        print(f"Directory {chain_directory} was successfully removed.")
+                        shutil.rmtree(chain_directory)
+                        #print(f"Directory {chain_directory} was successfully removed.")
                     except OSError as e:
                         print(f"Error: {chain_directory} : {e.strerror}")
+
+                    # Appending each data frame
+                    dataframes_list.append(template_dataset)
+
+                # Concatenating data sets for each chain
+                all_templates_dataset = RandomForestModel().concat_training_data(dataframes_list)
+                print(all_templates_dataset)
+
+                # Splitting data into train/test
+                X_train, X_test, Y_train, Y_test = RandomForestModel().split_data(all_templates_dataset)
+
+                # Generating classifier model using Random Forest
+                rf_model = RandomForestModel().get_model(X_train, Y_train)
+                print(rf_model)
+
+                    #print(template_dataset)
+
+
 
                     # Convert the .ent file to .pdb format
                     #input_path = os.path.join("templates", f"pdb{pdb_id}.ent")
@@ -127,7 +165,9 @@ def main():
     # MAYBE PUT AN IF HERE IN TERMS OF IF IT HAS NOT FOUND ANY TEMPLATES TO STOP PROGRAM
 
     # 3. COMPUTING QUERY FEATURES
+    sys.stderr.write('\n-----------------------------------\n') if options.verbose else None
     sys.stderr.write('Calculating query protein features...\n') if options.verbose else None
+    sys.stderr.write('-----------------------------------\n\n') if options.verbose else None
 
     try:
         # Computing residue and atom features

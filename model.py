@@ -48,8 +48,13 @@ class RandomForestModel:
       for filename in os.listdir('./template_datasets'):
       # Check if the search string is part of the filename
         if protein_object.protein_id[3:] in filename:
-        # If it is, print the filename
-          return str(protein_object.protein_id[3:], "has already been calculated")
+          # If it is, print the filename
+          print(protein_object.protein_id[3:], "features have already been calculated")
+
+          # and read the dataframe, load it as a pandas dataframe and return it
+          with open(os.path.join('./template_datasets', filename), 'r') as f:
+            df = pd.read_csv(f)
+            return df
 
     # 1. COMPUTE FEATURES OF EACH TEMPLATE
     # Calling data frame to add residues as first column
@@ -69,18 +74,14 @@ class RandomForestModel:
     p_layer = Layer(protein_object, './atom_types.csv')
     p_layer.get_layer_properties()
 
-    df_list = []
-
-
     # 2. EXTRACT THE SITE LABELS OF THE TEMPLATE
     protein_object.dataframe["Label"] = pd.Series(dtype=int)
 
     protein_id = str(protein_object.structure.get_id())[3:7]
     chain_id = str(protein_object.structure.get_id())[7]
 
-    print(protein_id, chain_id)
-
     list_binding_sites = ExtractBindingSites().extract_binding_sites(protein_id, chain_id)
+    #print(list_binding_sites)
 
     if list_binding_sites:
 
@@ -102,36 +103,27 @@ class RandomForestModel:
         
             else:
               protein_object.dataframe.loc[res,'Label'] = 0
-        
-      df_list.append((protein_object.protein_id, protein_object.dataframe))
-    
+          
     else:
       print("WARNING: THIS TEMPLATE HAS NO BINDING SITES LABELS AND SHOULD BE REMOVED")
+    
+    # Saving dataframe into a folder
+    protein_object.dataframe.to_csv('./template_datasets/' + protein_id + chain_id + '.csv')
 
+    return protein_object.dataframe
+  
+
+  def concat_training_data(self, dataframes_list):
+        
     # Create the template set
     train_df = pd.DataFrame()
 
-    if df_list:
-      
-      # Create empty list to append only dataframes
-      only_df_list = []
+    if len(dataframes_list) > 0:
 
-      for protein in df_list:
-
-        file_name = protein[0]
-        protein_id = file_name[3:]
-        df = protein[1]
-
-        df.to_csv('./template_datasets/' + protein_id + '.csv')
-
-        # appending dataframe to only_df_list
-        only_df_list.append(df)
-
-      # now actually creating whole template set by concatenating all dfs
-      train_df = pd.concat(only_df_list, axis = 0)
+      train_df = pd.concat(dataframes_list, axis = 0)
 
     return train_df
-
+  
 
   def split_data(self, train_df):
     X = train_df.iloc[:, 1:]     # Select all the rows and all but the first column (residue_name)
@@ -265,7 +257,7 @@ class ExtractBindingSites:
       residue_symbol = str(chain_id + '_' + three_let_res + res_num)
       final_residues.append(residue_symbol)
 
-      return final_residues
+    return final_residues
     
 
 

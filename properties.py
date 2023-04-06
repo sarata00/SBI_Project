@@ -125,10 +125,10 @@ class ProteinFeatures:
 
 
         if residue.get_resname() == 'CYS':
-          self.protein.dataframe.loc[res,'Cysteine'] = 'Yes'
+          self.protein.dataframe.loc[res,'Cysteine'] = 1
           
         elif Bio.PDB.is_aa(residue):
-          self.protein.dataframe.loc[res,'Cysteine'] = 'No'
+          self.protein.dataframe.loc[res,'Cysteine'] = 0
 
         else:
           continue
