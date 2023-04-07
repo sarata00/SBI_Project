@@ -12,6 +12,7 @@ import sys
 import os
 import requests
 from bs4 import BeautifulSoup
+from tabulate import tabulate
 
 
 class RandomForestModel:
@@ -126,7 +127,7 @@ class RandomForestModel:
   
 
   def split_data(self, train_df):
-    X = train_df.iloc[:, 1:]     # Select all the rows and all but the first column (residue_name)
+    X = train_df.iloc[:, 1:-1]   # Select all the rows and remove first and last columns (residue_name and label)
     y = train_df.iloc[:, -1]     # Select as target the SITE label on the last column (Label)
 
     # Split the data
@@ -135,24 +136,52 @@ class RandomForestModel:
     return X_train, X_test, y_train, y_test
 
   def get_model(self, X_train, y_train):
-    # Train a random forest classifier on the training data
-    rf = RandomForestClassifier(n_estimators=100, max_depth = None, min_samples_split= 2, 
+    
+    # We will set a threshold to which we consider class labels are unbalanced
+    positive_data = y_train[y_train == 1]
+    negative_data = y_train[y_train == 0]
+
+    threshold = 3 # if negative data is 3 times more represented than positive data, we will
+                  # consider that the dataset is highly unbalanced
+
+    # if data is highly unbalanced, we add class_weight argument to give higher weight to
+    # underrepresented class
+    if len(negative_data)/len(positive_data) >= threshold:
+      rf = RandomForestClassifier(n_estimators=100, max_depth = None, min_samples_split= 2, 
+                                bootstrap = True, random_state=42, class_weight='balanced')
+    
+    # else, we will not consider data is too unbalanced and we will just run the classifier as is
+    else:
+      rf = RandomForestClassifier(n_estimators=100, max_depth = None, min_samples_split= 2, 
                                 bootstrap = True, random_state=42)
+    
+    # fitting data into rf model
     rf.fit(X_train, y_train)
 
     return rf
 
-  def get_predictions(self, protein_object, cl_model):
+  def get_predictions(self, dataset, cl_model):
 
+    # Obtaining probability vector by applying classification model to query dataframe
+    prob_vector = cl_model.predict_proba(dataset)[:,1]
     
+    prob_threshold = 0.5
 
-    template_dataframe = self.get_training_data(protein_object)
-    X_train, X_test, y_train, y_test = self.split_data(template_dataframe)
-    class_model = self.get_model(X_train, y_train)
+    pred_vector = []
 
-    y_prediction = class_model.predict(X_test)
+    for prob in prob_vector:
+        if prob < prob_threshold:
+            pred_vector.append(0)
+        else:
+            pred_vector.append(1)
 
-    return y_prediction
+    dataset['prediction'] = pred_vector
+
+    # This last condition is used so we can check the method worked when
+    # calling the method from another script
+    if len(pred_vector) > 0:
+      return True
+  
 
   def model_evaluation(self, y_prediction, y_test):
     accuracy = accuracy_score(y_test, y_prediction)
@@ -160,60 +189,13 @@ class RandomForestModel:
     recall = recall_score(y_test, y_prediction, average='macro')
     f1 = f1_score(y_test, y_prediction, average='macro')
     
-    return accuracy, precision, recall, f1
+    table = [['Metric', 'Score'],
+                 ['Accuracy', round(accuracy, 2)],
+                 ['Precision', round(precision, 2)],
+                 ['Recall', round(recall, 2)],
+                 ['F1', round(f1, 2)]]
 
-
-
-'''
-# Faz a predição a partir do vetor de probabilidades de um classificador
-  def predict_prob(self,prob_vector, threshold):
-      pred_vector = []
-      for prob in prob_vector:
-          if prob < threshold:
-              pred_vector.append(0)
-          else:
-              pred_vector.append(1)
-      return pred_vector
-
-  # voting using calssification matrix
-  def voting(self, binary_matrix, treshold):
-      binary_matrix = binary_matrix.T
-      confidence = []
-      for i in range(binary_matrix.shape[0]):
-          # computa a porcentagem de classificadores na votacao
-          confidence.append(np.sum(binary_matrix[i])/float(binary_matrix[i].shape[0]))#
-      return self.predict_prob(confidence, treshold)
-
-  def balanced_prediction(self, protein, out_dir, naccess):
-      # search and store templates matricies
-      self.set_train_data(protein, naccess)
-      pos_data, neg_data, N_PARTITIONS = self.split_data(self.train_set)
-      # shuffle negative index
-      permuted_indices = np.random.permutation(len(neg_data))
-      # matrix with class values foa all predictions
-      # each line is a prediction of one ensenble
-      class_matrix = []
-      for i in range(N_PARTITIONS):
-          # Concat positive and a fragment os negative instances
-          final_matrix = pd.concat([pos_data, neg_data.iloc[permuted_indices[i::N_PARTITIONS]]])
-          class_model = self.get_model(final_matrix)
-          # probability_vector
-          probs = class_model.predict_proba(protein.matrix)[:,1]
-          # voting probabilities
-          class_matrix.append(self.predict_prob(probs, 0.5))
-          # cleaning memory
-          del class_model
-      # Fzendo predicao final usando a combinacao dos ensembles
-      vector_pred = self.voting(np.array(class_matrix), 0.5)
-      protein.matrix['prediction'] = vector_pred
-      protein.matrix.to_csv(out_dir + os.path.basename(protein.file_name).replace('.pdb', '.csv'), columns=['prediction'])
-
-
-'''
-
-
-
-
+    return tabulate(table)
 
 
 

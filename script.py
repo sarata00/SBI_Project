@@ -65,7 +65,7 @@ def main():
     templ = BLAST('../BioLip_database/biolip_database')
 
     # Generating empty list where we will store the random forest models obtained for each chain
-    rf_models_list = []
+    rf_models_dict = {}
 
     # Download our target fasta file
     for fasta_file in target_protein.write_fasta_file(): 
@@ -152,13 +152,36 @@ def main():
 
                 # Splitting data into train/test
                 X_train, X_test, Y_train, Y_test = RandomForestModel().split_data(all_templates_dataset)
+                #print(X_train, X_test, Y_train, Y_test)
                 sys.stderr.write(f"Data successfully split into train and test sets!\n")
                 #sys.stderr.write(f"{X_train}\n{Y_train}")
 
+                ###################################
+                # 1.3 GENERATING CLASSIFIER MODEL #
+                ###################################
+
                 # Generating classifier model using Random Forest
                 rf_model = RandomForestModel().get_model(X_train, Y_train.astype('int'))
-                rf_models_list.append(rf_model)
+                # Appending chain model to dictionary for later use
+                rf_models_dict[fasta_file] = rf_model
 
+                ###############################
+                # 1.4 EVALUATION ON TEST DATA #
+                ###############################
+
+                RandomForestModel().get_predictions(X_test, rf_model)
+                Y_pred = X_test.iloc[:, -1]
+
+                # Evaluating model
+                metrics_table = RandomForestModel().model_evaluation(Y_pred, Y_test)
+                
+                # Create a list of tuples with the metric names and values
+                if metrics_table:
+                    print("The following metrics were obtained from the test data:\n")
+                    print(metrics_table)
+                else:
+                    print("WARNING: metrics could not be obtained.")
+                    
             else:
                 print(f"Final homologs list could not be retrieved from {fasta_file}, stop the program.")
                 exit(3)
@@ -167,21 +190,24 @@ def main():
             print(f"No homologs could be retrieved from {fasta_file}, stop the program")
             exit(3)
     
+    print(rf_models_dict)
+
     ##########################
     #                        #
     # 3. QUERY FEATURES      #
     #                        #
     ##########################
 
-    sys.stderr.write('\n-----------------------------------\n') if options.verbose else None
-    sys.stderr.write('Calculating query protein features...\n') if options.verbose else None
-    sys.stderr.write('-----------------------------------\n\n') if options.verbose else None
+    sys.stderr.write('\n----------------------------------------------------------\n') if options.verbose else None
+    sys.stderr.write('Calculating query protein features and making predictions\n') if options.verbose else None
+    sys.stderr.write('------------------------------------------------------------\n\n') if options.verbose else None
 
     ##########################################
     # 3.1 FEATURES FOR EACH CHAIN SEPARATELY #
     ##########################################
     
     # Similar methodology applied in the templates section above
+
     target_protein.get_pdb_chains() # this produces the chain_directory mentioned below
     query_pdb_id = target_protein.structure.get_id()
 
@@ -190,9 +216,13 @@ def main():
     if os.path.exists(query_chain_directory):
         sys.stderr.write(f"We have created the folder {query_chain_directory} to store the chains of the query protein {query_pdb_id}\n")
 
+        # Naming directory where we will store predictions
+        out_dir = './query_predictions/'
+
         # now checking if current chain name is in the directory as a pdb chain file
         for file_name in os.listdir(query_chain_directory):
-            sys.stderr.write(f"PDB file for {file_name[:-4]} could be obtained. Now calculating chain features...\n")
+            sys.stderr.write(f"CALCULATING CHAIN FEATURES\n\n")
+            sys.stderr.write(f"PDB file for {file_name[:-4]} could be obtained.\n\n")
             query_chain = Protein(str(query_chain_directory + '/' + file_name))  
 
             try:
@@ -214,34 +244,35 @@ def main():
                 print("Error:", e, file=sys.stderr)
                 raise
             
-            sys.stderr.write('Query protein features calculated successfully.\n') if options.verbose else None
+            #sys.stderr.write('Query protein features calculated successfully.\n') if options.verbose else None
 
             print(query_chain.dataframe)
-    
-    #print(target_protein.dataframe)
 
-    # Test the Random Forest model
-    #rf = RandomForestModel("./templates")
-    #template_dataframe = rf.get_training_data(p)
+            ##########################
+            #                        #
+            #    4. PREDICTIONS      #
+            #                        #
+            ##########################
+            
+            sys.stderr.write(f'\nNOW PREDICTING BINDING SITES ON QUERY PROTEIN CHAIN\n') if options.verbose else None
 
-    #print(f"This is the template_df:\n {template_dataframe}")
-   # print(f"Starting with predictions .......")
-    #templ_predictions = rf.get_predictions(p)
-    #y_test = rf.split_data(template_dataframe).y_test
-    #accuracy = rf.model_evaluation(templ_predictions, y_test).accuracy
+            # Checking if name of current chain in keys of rf_models_dict
+            for q_chain in rf_models_dict:
 
-    #print(f"Model accuracy: {accuracy}")
+                if file_name[:-4] in q_chain:
 
-    # Now depending on the accuracy of the model, use it to 
-    # predict the binding sites of our target:
+                    predictions = RandomForestModel().get_predictions(query_chain.dataframe, rf_models_dict[q_chain])
+                    if predictions:
 
-    # target_model = rf.get_training_data(target_protein)
-    # target_prediction = rf.get_predictions(target_protein)
+                        sys.stderr.write(f'Binding sites have been successfully predicted!\n\n') if options.verbose else None
 
-    
+                    if not os.path.exists('./query_predictions/'):
+                        os.makedirs('./query_predictions/')
 
+                    query_chain.dataframe.to_csv(out_dir + query_chain.structure.get_id() + '.csv', columns=['prediction'])
 
-    
+        sys.stderr.write(f'Prediction tables can be found in {out_dir} \n') if options.verbose else None
+
 if __name__ == '__main__':
     main()
 

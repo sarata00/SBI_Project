@@ -103,14 +103,14 @@ class Protein:
     fasta_files_list = []
     
     for chain, seq in self.get_sequence().items():
-      fasta_filename = os.path.join(directory, f"{file_id}_{chain}.fasta")
+      fasta_filename = os.path.join(directory, f"{file_id}{chain}.fasta")
     
       with open(fasta_filename, 'w') as fasta_file:
       
-        fasta_file.write(f">{file_id}_{chain}\n")
+        fasta_file.write(f">{file_id}{chain}\n")
         fasta_file.write(f"{seq}\n")
       
-      fasta_files_list.append(f'./{file_id}_{chain}.fasta')
+      fasta_files_list.append(f'./{file_id}{chain}.fasta')
 
     return fasta_files_list
 
