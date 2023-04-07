@@ -99,10 +99,10 @@ class RandomForestModel:
             res =  chain_id + '_' + resname + str(resnum)
 
             if res in list_binding_sites:
-              protein_object.dataframe.loc[res,'Label'] = 1
+              protein_object.dataframe.loc[res,'Label'] = int(1)
         
             else:
-              protein_object.dataframe.loc[res,'Label'] = 0
+              protein_object.dataframe.loc[res,'Label'] = int(0)
           
     else:
       print("WARNING: THIS TEMPLATE HAS NO BINDING SITES LABELS AND SHOULD BE REMOVED")
@@ -127,21 +127,25 @@ class RandomForestModel:
 
   def split_data(self, train_df):
     X = train_df.iloc[:, 1:]     # Select all the rows and all but the first column (residue_name)
-    y = train_df.iloc[:,:-1]     # Select as target the SITE label on the last column (Label)
+    y = train_df.iloc[:, -1]     # Select as target the SITE label on the last column (Label)
 
     # Split the data
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3 , random_state= 42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3 , random_state= 42, shuffle=True)
 
     return X_train, X_test, y_train, y_test
 
   def get_model(self, X_train, y_train):
     # Train a random forest classifier on the training data
-    rf = RandomForestClassifier(n_estimators=100, max_depth = None, bootstrap = True, random_state=42)
+    rf = RandomForestClassifier(n_estimators=100, max_depth = None, min_samples_split= 2, 
+                                bootstrap = True, random_state=42)
     rf.fit(X_train, y_train)
 
     return rf
 
-  def get_predictions(self, protein_object):
+  def get_predictions(self, protein_object, cl_model):
+
+    
+
     template_dataframe = self.get_training_data(protein_object)
     X_train, X_test, y_train, y_test = self.split_data(template_dataframe)
     class_model = self.get_model(X_train, y_train)

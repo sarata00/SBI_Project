@@ -64,6 +64,9 @@ def main():
 
     templ = BLAST('../BioLip_database/biolip_database')
 
+    # Generating empty list where we will store the random forest models obtained for each chain
+    rf_models_list = []
+
     # Download our target fasta file
     for fasta_file in target_protein.write_fasta_file(): 
 
@@ -83,9 +86,9 @@ def main():
             if len(list_new) >= 20:
                 list_homologs_final = list_new[:20]
 
-            #################################
-            # 1.2 COMPUTING TEMPLATE FEATURES
-            #################################
+            ###################################
+            # 1.2 COMPUTING TEMPLATE FEATURES #
+            ###################################
 
             if list_homologs_final:
                 
@@ -111,26 +114,35 @@ def main():
                     template.get_pdb_chains() # this produces the chain_directory mentioned below
                     pdb_id = template.structure.get_id()
 
-                    chain_directory = str('./' + pdb_id + '_chains')
-                    sys.stderr.write(f"We have created the folder {chain_directory} to store the chains of {pdb_id}\n")
+                    # Retrieving folder name for this template
+                    chain_directory = template.chains_folder_name
+                    print(chain_directory)
+
+                    if os.path.exists(chain_directory):
+                        sys.stderr.write(f"We have created the folder {chain_directory} to store the chains of {pdb_id}\n")
+                        
+                        # now checking if current chain name is in the directory as a pdb chain file
+                        template_chain = ''
+
+                        for file_name in os.listdir(chain_directory):
+                            if pdb in file_name:
+
+                                sys.stderr.write(f"PDB file for {pdb} could be obtained. Now calculating chain features...\n")
+                                template_chain = Protein(str(chain_directory + '/' + file_name))
+                        
+                        template_dataset = RandomForestModel().get_training_data(template_chain)
+
+                        # we delete folder with chains because we want to avoid accumulation of folders
+                        try:
+                            shutil.rmtree(chain_directory)
+                            #print(f"Directory {chain_directory} was successfully removed.")
+                        except OSError as e:
+                            print(f"Error: {chain_directory} : {e.strerror}")
+
+                    else:
+                        print(f"The directory {chain_directory} could not be created, current template will be dismissed.\n")
+                        continue
                     
-                    # now checking if current chain name is in the directory as a pdb chain file
-                    template_chain = ''
-                    for file_name in os.listdir(chain_directory):
-                        if pdb in file_name:
-
-                            sys.stderr.write(f"PDB file for {pdb} could be obtained. Now calculating chain features...\n")
-                            template_chain = Protein(str(chain_directory + '/' + file_name))
-                    
-                    template_dataset = RandomForestModel().get_training_data(template_chain)
-
-                    # we delete folder with chains because we want to avoid accumulation of folders
-                    try:
-                        shutil.rmtree(chain_directory)
-                        #print(f"Directory {chain_directory} was successfully removed.")
-                    except OSError as e:
-                        print(f"Error: {chain_directory} : {e.strerror}")
-
                     # Appending each data frame
                     dataframes_list.append(template_dataset)
 
@@ -140,57 +152,71 @@ def main():
 
                 # Splitting data into train/test
                 X_train, X_test, Y_train, Y_test = RandomForestModel().split_data(all_templates_dataset)
+                sys.stderr.write(f"Data successfully split into train and test sets!\n")
+                #sys.stderr.write(f"{X_train}\n{Y_train}")
 
                 # Generating classifier model using Random Forest
-                rf_model = RandomForestModel().get_model(X_train, Y_train)
-                print(rf_model)
+                rf_model = RandomForestModel().get_model(X_train, Y_train.astype('int'))
+                rf_models_list.append(rf_model)
 
-                    #print(template_dataset)
-
-
-
-                    # Convert the .ent file to .pdb format
-                    #input_path = os.path.join("templates", f"pdb{pdb_id}.ent")
-                    #output_path = os.path.join("templates", f"pdb{pdb_id}.pdb")
-                    #subprocess.call(["pdb4amber", "-i", input_path, "-o", output_path])
-            
-                    # Create a Protein object for each template
-                    #p = Protein(f)
-
+            else:
+                print(f"Final homologs list could not be retrieved from {fasta_file}, stop the program.")
+                exit(3)
         else:
 
             print(f"No homologs could be retrieved from {fasta_file}, stop the program")
             exit(3)
+    
+    ##########################
+    #                        #
+    # 3. QUERY FEATURES      #
+    #                        #
+    ##########################
 
-    # MAYBE PUT AN IF HERE IN TERMS OF IF IT HAS NOT FOUND ANY TEMPLATES TO STOP PROGRAM
-
-    # 3. COMPUTING QUERY FEATURES
     sys.stderr.write('\n-----------------------------------\n') if options.verbose else None
     sys.stderr.write('Calculating query protein features...\n') if options.verbose else None
     sys.stderr.write('-----------------------------------\n\n') if options.verbose else None
 
-    try:
-        # Computing residue and atom features
-        target_protein_features = ProteinFeatures(target_protein, './atom_types.csv')
-        target_protein_features.residue_properties()
-        target_protein_features.atom_properties()
-        target_protein_features.is_cysteine()
-
-        # Computing interactions
-        target_protein_interactions = Interactions(target_protein, './atom_types.csv')
-        target_protein_interactions.calculate_interactions()
-
-        # Compute layer features (atom and residue properties, and interactions)
-        target_protein_layer = Layer(target_protein, './atom_types.csv')
-        target_protein_layer.get_layer_properties()
-
-    except Exception as e:
-        print("Error:", e, file=sys.stderr)
-        raise
+    ##########################################
+    # 3.1 FEATURES FOR EACH CHAIN SEPARATELY #
+    ##########################################
     
-    sys.stderr.write('Query protein features calculated successfully.\n') if options.verbose else None
+    # Similar methodology applied in the templates section above
+    target_protein.get_pdb_chains() # this produces the chain_directory mentioned below
+    query_pdb_id = target_protein.structure.get_id()
 
-    print(target_protein.dataframe)
+    query_chain_directory = target_protein.chains_folder_name
+
+    if os.path.exists(query_chain_directory):
+        sys.stderr.write(f"We have created the folder {query_chain_directory} to store the chains of the query protein {query_pdb_id}\n")
+
+        # now checking if current chain name is in the directory as a pdb chain file
+        for file_name in os.listdir(query_chain_directory):
+            sys.stderr.write(f"PDB file for {file_name[:-4]} could be obtained. Now calculating chain features...\n")
+            query_chain = Protein(str(query_chain_directory + '/' + file_name))  
+
+            try:
+                # Computing residue and atom features
+                query_chain_features = ProteinFeatures(query_chain, './atom_types.csv')
+                query_chain_features.residue_properties()
+                query_chain_features.atom_properties()
+                query_chain_features.is_cysteine()
+
+                # Computing interactions
+                query_chain_interactions = Interactions(query_chain, './atom_types.csv')
+                query_chain_interactions.calculate_interactions()
+
+                # Compute layer features (atom and residue properties, and interactions)
+                query_chain_layer = Layer(query_chain, './atom_types.csv')
+                query_chain_layer.get_layer_properties()
+
+            except Exception as e:
+                print("Error:", e, file=sys.stderr)
+                raise
+            
+            sys.stderr.write('Query protein features calculated successfully.\n') if options.verbose else None
+
+            print(query_chain.dataframe)
     
     #print(target_protein.dataframe)
 

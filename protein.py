@@ -7,7 +7,6 @@ from Bio.PDB import NeighborSearch
 from Bio.PDB import PDBParser
 from Bio.PDB.PDBIO import PDBIO
 from io import StringIO
-from residue_transformation import aa_conversion
 
 # Class
 class Protein:
@@ -22,6 +21,7 @@ class Protein:
       
     self.structure = self.read_pdb(self.protein_id, self.file_name) # read pdb
     self.dataframe_info()
+    self.chains_folder_name = None
 
 ################################################################################
   # Function to read the pdb file and obtain its Structure object.
@@ -81,14 +81,15 @@ class Protein:
     prot_id = self.structure.get_id()
 
     # create folder where we store chains
-    folder_name = str('./' + prot_id + '_chains')
-    if not os.path.exists(folder_name):
-      os.makedirs(folder_name)
+    self.chains_folder_name = str('./' + prot_id + '_chains')
+
+    if not os.path.exists(self.chains_folder_name):
+      os.makedirs(self.chains_folder_name)
 
     for chain in pdb_chains:
         io = PDBIO()
         io.set_structure(chain)
-        io.save(folder_name + '/' + prot_id + chain.get_id() + ".pdb")
+        io.save(self.chains_folder_name + '/' + prot_id + chain.get_id() + ".pdb")
 
 ######################################################################
   # Gets the fasta sequence of each chain
@@ -178,16 +179,3 @@ class Protein:
             neighborhood_set.add(neighbor)
     
     return neighborhood_set
-
-### ASIDE FUNCTIONS
-
-######################################################################
-  # Converts 1-letter residues to 3-letter residues
-  # Input: 1-letter residue
-  # Output: 3-letter residue
-######################################################################
-
-  def convert_residue(residue):
-
-    converted_residue = aa_conversion[residue]
-    return converted_residue
