@@ -207,13 +207,19 @@ def main():
     ##########################################
     
     # Similar methodology applied in the templates section above
-
     target_protein.get_pdb_chains() # this produces the chain_directory mentioned below
     query_pdb_id = target_protein.structure.get_id()
 
     query_chain_directory = target_protein.chains_folder_name
 
     if os.path.exists(query_chain_directory):
+
+        # (PARENTHESIS) - Creating file for chimera (see much below)
+        try:
+            chimera_cmd_file = open("chimera.cmd", "w")
+        except FileExistsError:
+            print("File already exists.")
+
         sys.stderr.write(f"We have created the folder {query_chain_directory} to store the chains of the query protein {query_pdb_id}\n")
 
         # Naming directory where we will store predictions
@@ -270,6 +276,31 @@ def main():
                         os.makedirs('./query_predictions/')
 
                     query_chain.dataframe.to_csv(out_dir + query_chain.structure.get_id() + '.csv', columns=['prediction'])
+
+            ############################
+            #                          #
+            # 5. GENERATE CHIMERA FILE #
+            #                          #
+            ############################
+
+            chimera_cmd_file.write(f'# Chain {query_chain.structure.get_id()}')
+
+            for i, row in query_chain.dataframe.iterrows():
+            # Extract the residue name, number and chain
+                res = row['residue_name']
+                resnum = res[5:]
+                chain = res[0]
+
+                # Loop through the remaining columns and select the residues
+                label = row['prediction']
+                
+                if int(label) == 1:
+                    
+                    # format must be for example 'select :10.A' 
+                    chimera_cmd_file.write(f'select :{resnum}.{chain}\n')
+                
+        chimera_cmd_file.write('# Coloring binding sites\n')
+        chimera_cmd_file.write('color green sel')
 
         sys.stderr.write(f'Prediction tables can be found in {out_dir} \n') if options.verbose else None
 
