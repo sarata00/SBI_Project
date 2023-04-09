@@ -291,7 +291,7 @@ def main():
 
             print(query_chain.dataframe)
 
-            chimera_cmd_file.write(f'# Chain {query_chain.structure.get_id()}\n')
+            # chimera_cmd_file.write(f'# Chain {query_chain.structure.get_id()}\n')
            
 
             for index, row in query_chain.dataframe.iterrows():
@@ -310,7 +310,7 @@ def main():
                     binding_sites_chimera.append(f'{resnum}.{chain}') 
                     
 
-        selection = '|'.join(binding_sites_chimera)            
+        selection = ','.join(binding_sites_chimera)            
         #chimera_cmd_file.write(f'select :{selection}\n')
         chimera_cmd_file.write('# Coloring binding sites\n')
         chimera_cmd_file.write(f'color green :{selection}')
