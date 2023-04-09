@@ -18,18 +18,12 @@ def main():
     # COMMAND FROM COMMAND-LINE
     ## name_program.py -p < protein_pdb > -db < biolip_db > (-a < atom_types_file -o < out_file > ??)
 
-    parser = argparse.ArgumentParser(description= " This program does this")
+    parser = argparse.ArgumentParser(description= ' This program does this')
 
     parser.add_argument('-p', dest = 'protein_file', default = None, required = True, help = 'Path to input PDB file')
-    #parser.add_argument('-db', dest = 'BioLip_db', default = None, required = True, help = 'Path to the Biolip database, which is used to do the BLAST')
-    #parser.add_argument('-a', dest = 'atom_types_file', default = None, required = True, help = 'Path to the atom_types.csv file, which stores the atom properties')
-    # should we create one for the output ?
     parser.add_argument('-v', '--verbose', dest = 'verbose', action = 'store_true', default = False, help = 'Print log in stderr') # It saves the var verbose as True, so we can call it if we want to print to Stderr
 
     options = parser.parse_args()
-
-    #print(options.verbose)
-    #print(options.protein_file)  
 
     if os.path.isfile(options.protein_file) and options.protein_file.endswith('.pdb'):
 
@@ -43,6 +37,7 @@ def main():
 
     else:
         print("PDB file needed")
+        exit(3)
 
     ##########################
     #                        #
@@ -54,7 +49,7 @@ def main():
     sys.stderr.write('--------------------------------------------------\n\n') if options.verbose else None
 
     # Create a folder to store everything related to the templates:
-    path = "./templates"
+    path = './templates'
     if not os.path.exists(path):
         os.makedirs(path)
 
@@ -64,14 +59,15 @@ def main():
 
     templ = BLAST('../BioLip_database/biolip_database')
 
-    # Generating empty list where we will store the random forest models obtained for each chain
+    # Generating a dictionary where we will store the random forest models obtained for each chain
     rf_models_dict = {}
 
-    # Download our target fasta file
+    # Download the fasta files of our target protein (a fasta file per chain)
     for fasta_file in target_protein.write_fasta_file(): 
 
         sys.stderr.write(f"Working on following chain: {fasta_file}\n\n") if options.verbose else None
 
+        # BLAST of each chain, the homologous proteins are stored in a list
         list_homologs = templ.search_homologs(fasta_file)
 
         if list_homologs != None:
@@ -80,9 +76,11 @@ def main():
 
             for homolog in list_homologs:
 
+                # Avoid storing the target protein as homolog
                 if target_protein.protein_id not in str(homolog):
                     list_new.append(homolog)
 
+            # We just need top 20 homologous proteins
             if len(list_new) >= 20:
                 list_homologs_final = list_new[:20]
 
@@ -111,15 +109,15 @@ def main():
                     
                     # Obtain chains from PDB file
                     template = Protein(f)
-                    template.get_pdb_chains() # this produces the chain_directory mentioned below
+                    template.get_pdb_chains() # this method produces the chain_directory mentioned below
                     pdb_id = template.structure.get_id()
 
                     # Retrieving folder name for this template
                     chain_directory = template.chains_folder_name
-                    print(chain_directory)
+                    #print(chain_directory)
 
                     if os.path.exists(chain_directory):
-                        sys.stderr.write(f"We have created the folder {chain_directory} to store the chains of {pdb_id}\n")
+                        sys.stderr.write(f"We have created the folder {chain_directory} to store the chains of {pdb_id}\n") 
                         
                         # now checking if current chain name is in the directory as a pdb chain file
                         template_chain = ''
@@ -127,10 +125,13 @@ def main():
                         for file_name in os.listdir(chain_directory):
                             if pdb in file_name:
 
-                                sys.stderr.write(f"PDB file for {pdb} could be obtained. Now calculating chain features...\n")
+                                sys.stderr.write(f"PDB file for {pdb} could be obtained. Now calculating chain features...\n") if options.verbose else None
                                 template_chain = Protein(str(chain_directory + '/' + file_name))
                         
-                        template_dataset = RandomForestModel().get_training_data(template_chain)
+                        template_chain_dataset = RandomForestModel().get_training_data(template_chain)
+
+                        if type(template_chain_dataset) == str:
+                            sys.stderr.write(template_chain_dataset) if options.verbose else None
 
                         # we delete folder with chains because we want to avoid accumulation of folders
                         try:
@@ -140,11 +141,13 @@ def main():
                             print(f"Error: {chain_directory} : {e.strerror}")
 
                     else:
-                        print(f"The directory {chain_directory} could not be created, current template will be dismissed.\n")
+                        print(f"The directory {chain_directory} could not be created, current template will be dismissed.\n") if options.verbose else None
                         continue
                     
-                    # Appending each data frame
-                    dataframes_list.append(template_dataset)
+                    # Appending each data frame 
+                    # (and avoid including templates without binding site labels)
+                    if type(template_chain_dataset) != str:
+                        dataframes_list.append(template_chain_dataset)
 
                 # Concatenating data sets for each chain
                 all_templates_dataset = RandomForestModel().concat_training_data(dataframes_list)
@@ -153,7 +156,7 @@ def main():
                 # Splitting data into train/test
                 X_train, X_test, Y_train, Y_test = RandomForestModel().split_data(all_templates_dataset)
                 #print(X_train, X_test, Y_train, Y_test)
-                sys.stderr.write(f"Data successfully split into train and test sets!\n")
+                sys.stderr.write(f"Data successfully split into train and test sets!\n") if options.verbose else None
                 #sys.stderr.write(f"{X_train}\n{Y_train}")
 
                 ###################################
@@ -202,6 +205,9 @@ def main():
     sys.stderr.write('Calculating query protein features and making predictions\n') if options.verbose else None
     sys.stderr.write('------------------------------------------------------------\n\n') if options.verbose else None
 
+     # Create a list to store the binding site residues (later on will be used for Chimera)
+    binding_sites_chimera = []
+    
     ##########################################
     # 3.1 FEATURES FOR EACH CHAIN SEPARATELY #
     ##########################################
@@ -227,8 +233,8 @@ def main():
 
         # now checking if current chain name is in the directory as a pdb chain file
         for file_name in os.listdir(query_chain_directory):
-            sys.stderr.write(f"CALCULATING CHAIN FEATURES\n\n")
-            sys.stderr.write(f"PDB file for {file_name[:-4]} could be obtained.\n\n")
+            sys.stderr.write(f"CALCULATING CHAIN FEATURES\n\n") if options.verbose else None
+            sys.stderr.write(f"PDB file for {file_name[:-4]} could be obtained.\n\n") if options.verbose else None
             query_chain = Protein(str(query_chain_directory + '/' + file_name))  
 
             try:
@@ -286,6 +292,7 @@ def main():
             print(query_chain.dataframe)
 
             chimera_cmd_file.write(f'# Chain {query_chain.structure.get_id()}\n')
+           
 
             for index, row in query_chain.dataframe.iterrows():
             # Extract the residue name, number and chain
@@ -299,11 +306,14 @@ def main():
                 
                 if int(label) == 1:
                     
-                    # format must be for example 'select :10.A' 
-                    chimera_cmd_file.write(f'sel :{resnum}.{chain}\n')
-                
+                    # format must be for example 'select :10.A'
+                    binding_sites_chimera.append(f'{resnum}.{chain}') 
+                    
+
+        selection = '|'.join(binding_sites_chimera)            
+        #chimera_cmd_file.write(f'select :{selection}\n')
         chimera_cmd_file.write('# Coloring binding sites\n')
-        chimera_cmd_file.write('color green sel')
+        chimera_cmd_file.write(f'color green :{selection}')
 
         chimera_cmd_file.close()
 

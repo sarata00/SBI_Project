@@ -40,19 +40,17 @@ class RandomForestModel:
     # calculating features for a chain template, which is time expensive,
     # if these have already been calculated in a previous other chain
 
-    # we start by creating a folder where the template datasets will be stored
+    # We start by creating a folder where the template datasets will be stored
     if not os.path.exists('./template_datasets'):
       os.makedirs('./template_datasets/')
 
-    # if the folder already exists, we check if the csv with the features already exists  
+    # If the folder already exists, we check if the csv with the features already exists  
     else:
       for filename in os.listdir('./template_datasets'):
       # Check if the search string is part of the filename
         if protein_object.protein_id[3:] in filename:
-          # If it is, print the filename
-          print(protein_object.protein_id[3:], "features have already been calculated")
 
-          # and read the dataframe, load it as a pandas dataframe and return it
+          # Read the dataframe, load it as a pandas dataframe and return it
           with open(os.path.join('./template_datasets', filename), 'r') as f:
             df = pd.read_csv(f)
             return df
@@ -106,7 +104,7 @@ class RandomForestModel:
               protein_object.dataframe.loc[res,'Label'] = int(0)
           
     else:
-      print("WARNING: THIS TEMPLATE HAS NO BINDING SITES LABELS AND SHOULD BE REMOVED")
+      return f"WARNING: {protein_object.protein_id} HAS NO BINDING SITES LABELS AND IT IS NOT CONSIDERED"
     
     # Saving dataframe into a folder
     protein_object.dataframe.to_csv('./template_datasets/' + protein_id + chain_id + '.csv')
