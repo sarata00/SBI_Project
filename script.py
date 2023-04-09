@@ -218,7 +218,7 @@ def main():
         try:
             chimera_cmd_file = open("chimera.cmd", "w")
         except FileExistsError:
-            print("File already exists.")
+            print("File already exists.") # realment aixo no cal pero no se q posar
 
         sys.stderr.write(f"We have created the folder {query_chain_directory} to store the chains of the query protein {query_pdb_id}\n")
 
@@ -252,7 +252,7 @@ def main():
             
             #sys.stderr.write('Query protein features calculated successfully.\n') if options.verbose else None
 
-            print(query_chain.dataframe)
+            #print(query_chain.dataframe)
 
             ##########################
             #                        #
@@ -260,7 +260,7 @@ def main():
             #                        #
             ##########################
             
-            sys.stderr.write(f'\nNOW PREDICTING BINDING SITES ON QUERY PROTEIN CHAIN\n') if options.verbose else None
+            sys.stderr.write(f'\nNOW PREDICTING BINDING SITES ON CURRENT QUERY PROTEIN CHAIN\n') if options.verbose else None
 
             # Checking if name of current chain in keys of rf_models_dict
             for q_chain in rf_models_dict:
@@ -283,11 +283,14 @@ def main():
             #                          #
             ############################
 
-            chimera_cmd_file.write(f'# Chain {query_chain.structure.get_id()}')
+            print(query_chain.dataframe)
 
-            for i, row in query_chain.dataframe.iterrows():
+            chimera_cmd_file.write(f'# Chain {query_chain.structure.get_id()}\n')
+
+            for index, row in query_chain.dataframe.iterrows():
             # Extract the residue name, number and chain
-                res = row['residue_name']
+                
+                res = index
                 resnum = res[5:]
                 chain = res[0]
 
@@ -297,10 +300,12 @@ def main():
                 if int(label) == 1:
                     
                     # format must be for example 'select :10.A' 
-                    chimera_cmd_file.write(f'select :{resnum}.{chain}\n')
+                    chimera_cmd_file.write(f'sel :{resnum}.{chain}\n')
                 
         chimera_cmd_file.write('# Coloring binding sites\n')
         chimera_cmd_file.write('color green sel')
+
+        chimera_cmd_file.close()
 
         sys.stderr.write(f'Prediction tables can be found in {out_dir} \n') if options.verbose else None
 
