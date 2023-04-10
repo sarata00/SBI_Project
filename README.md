@@ -81,11 +81,12 @@ Once we have all the results, we can visualise the predicted amino acids in a vi
    
    -> *File...Open from the menu and file browse to locate the file*
 
-   -> Command line: open ./3bj1.pdb (in case the PDB file is in the current directory)
+   -> Command line: `open ./3bj1.pdb` (in case the PDB file is in the current directory)
 
 3. **Open the chimera.cmd file**
    
    -> *File...Open from the menu and file browse to locate the file*
-   -> Command line: open ./chimera.cmd (in case the script is in the current directory)
+
+   -> Command line: `open ./chimera.cmd` (in case the script is in the current directory)
 
 
