@@ -1,19 +1,23 @@
+SBI Project 2022-23
 
 Program Name
+
+#### Authors
 Alexandre Casadesús
+
 Laia Fortuny
+
 Sara Tolosa Alarcón 
 
-SBI Project
 
 # Introduction
-----------------
+
 "Program name" is a machine learning predictor of protein ligand binding site. It takes as input a protein structure ini PDB format and produce as output a list of aminoacids involved in the binding site and a `.cmd`file that allows us to visualize the predicted binding site with a molecular graphic software such as Chimera.
 
 This program is tested in Linux and macOS using the `bash`command line to execute the program.
 
 # Requeriments
-----------------
+
 It is reconmendable to create a new enviroment in conda to install all the dependencies and execute the program. This program has been developed using the Python 3.9.12 version. 
 
 
@@ -32,7 +36,7 @@ It is reconmendable to create a new enviroment in conda to install all the depen
 
 
 # Usage
---------------
+
 In order to use the programme, you must first download all the modules and data of this GitHub repository. Then, in the same directory where the programme is downloaded, we can run it in the following way:
 
 ~~~bash
@@ -55,7 +59,7 @@ Once the programme has been run, it will take some time to make predictions. As 
 
 
 # Example: 3bj1.pdb
---------------------
+
 Here is an example of how this program works using the structure of the hemoglobin protein (3bj1.pdb):
 
 #### 1. Run the program
