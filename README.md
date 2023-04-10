@@ -76,11 +76,15 @@ Aquí deberíamos poner lo que aparece al poner verbose para que sea más intuit
 
 #### 3. Visualize on Chimera
 Once we have all the results, we can visualise the predicted amino acids in a visualiser such as Chimera. To do this we have to:
-1. Start chimera 
-2. Open the 3bj1.pdb file
+1. **Start chimera**
+2. **Open the 3bj1.pdb file**
+   
    -> *File...Open from the menu and file browse to locate the file*
+
    -> Command line: open ./3bj1.pdb (in case the PDB file is in the current directory)
-3. Open the chimera.cmd file
+
+3. **Open the chimera.cmd file**
+   
    -> *File...Open from the menu and file browse to locate the file*
    -> Command line: open ./chimera.cmd (in case the script is in the current directory)
 
