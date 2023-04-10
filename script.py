@@ -4,14 +4,17 @@ import sys
 import argparse
 import subprocess
 import Bio.PDB
+import shutil # remove directory with files
 from Bio.SeqUtils.ProtParam import ProteinAnalysis, ProtParamData
 from Bio.PDB import NeighborSearch
 from Bio.PDB import PDBList
+
+sys.path.append('./app')
+
 from protein import Protein
 from properties import ProteinFeatures, Interactions, Layer
 from BLAST import BLAST
 from model import RandomForestModel, ExtractBindingSites
-import shutil # remove directory with files
 
 
 def main():
@@ -204,7 +207,10 @@ def main():
     sys.stderr.write('------------------------------------------------------------\n\n') if options.verbose else None
 
      # Create a list to store the binding site residues (later on will be used for Chimera)
-    binding_sites_chimera = []
+    binding_sites_predicted_chimera = []
+    binding_sites_real_provisional_chimera = []
+    binding_sites_real_chimera = []
+    binding_sites_shared_chimera = []
     
     ##########################################
     # 3.1 FEATURES FOR EACH CHAIN SEPARATELY #
@@ -231,23 +237,23 @@ def main():
 
         # now checking if current chain name is in the directory as a pdb chain file
         for file_name in os.listdir(query_chain_directory):
-            sys.stderr.write(f"CALCULATING CHAIN FEATURES\n\n") if options.verbose else None
+            sys.stderr.write(f"\nCALCULATING CHAIN FEATURES\n\n") if options.verbose else None
             sys.stderr.write(f"PDB file for {file_name[:-4]} could be obtained.\n\n") if options.verbose else None
             query_chain = Protein(str(query_chain_directory + '/' + file_name))  
 
             try:
                 # Computing residue and atom features
-                query_chain_features = ProteinFeatures(query_chain, './atom_types.csv')
+                query_chain_features = ProteinFeatures(query_chain, './app/data/atom_types.csv')
                 query_chain_features.residue_properties()
                 query_chain_features.atom_properties()
                 query_chain_features.is_cysteine()
 
                 # Computing interactions
-                query_chain_interactions = Interactions(query_chain, './atom_types.csv')
+                query_chain_interactions = Interactions(query_chain, './app/data/atom_types.csv')
                 query_chain_interactions.calculate_interactions()
 
                 # Compute layer features (atom and residue properties, and interactions)
-                query_chain_layer = Layer(query_chain, './atom_types.csv')
+                query_chain_layer = Layer(query_chain, './app/data/atom_types.csv')
                 query_chain_layer.get_layer_properties()
 
             except Exception as e:
@@ -271,6 +277,8 @@ def main():
 
                 if file_name[:-4] in q_chain:
 
+                    #print(file_name[4])
+
                     predictions = RandomForestModel().get_predictions(query_chain.dataframe, rf_models_dict[q_chain])
                     if predictions:
 
@@ -280,6 +288,11 @@ def main():
                         os.makedirs('./query_predictions/')
 
                     query_chain.dataframe.to_csv(out_dir + query_chain.structure.get_id() + '.csv', columns=['prediction'])
+
+                    real_binding_site = ExtractBindingSites().extract_binding_sites(file_name[:-5], file_name[4])
+                    binding_sites_real_provisional_chimera.append(real_binding_site)
+                    #print(binding_sites_real_provisional_chimera)
+
 
             ############################
             #                          #
@@ -302,17 +315,42 @@ def main():
                 if int(label) == 1:
                     
                     # format must be for example 'select :10.A'
-                    binding_sites_chimera.append(f'{resnum}.{chain}') 
+                    binding_sites_predicted_chimera.append(f'{resnum}.{chain}') 
                     
 
-        selection = ','.join(binding_sites_chimera)            
+        selection_pred = ','.join(binding_sites_predicted_chimera)
+
+        for list_ch in binding_sites_real_provisional_chimera:
+            for residue1 in list_ch:
+
+                resnum = residue1[5:]
+                chain = residue1[0]
+
+                binding_sites_real_chimera.append(f'{resnum}.{chain}')
+
+                if f'{resnum}.{chain}' in binding_sites_predicted_chimera:
+
+                    binding_sites_shared_chimera.append(f'{resnum}.{chain}')
+        
+        #print(binding_sites_shared_chimera)
+        
+        selection_real = ','.join(binding_sites_real_chimera)
+        selection_shared = ','.join(binding_sites_shared_chimera)
+
         #chimera_cmd_file.write(f'select :{selection}\n')
         chimera_cmd_file.write('# Coloring binding sites\n')
-        chimera_cmd_file.write(f'color green :{selection}')
+        chimera_cmd_file.write(f'color green :{selection_pred}\n')
+        chimera_cmd_file.write(f'color red :{selection_real}\n')
+        chimera_cmd_file.write(f'color blue :{selection_shared}\n')
+
+
+        # Retrieve the real binding sites
+        #protein_id = str(protein_object.structure.get_id())[3:7]
+        #chain_id = str(protein_object.structure.get_id())[7]
 
         chimera_cmd_file.close()
 
-        sys.stderr.write(f'Prediction tables can be found in {out_dir} \n') if options.verbose else None
+        sys.stderr.write(f'\nPrediction tables can be found in {out_dir} \n') if options.verbose else None
 
 if __name__ == '__main__':
     main()

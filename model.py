@@ -60,17 +60,17 @@ class RandomForestModel:
     #protein_object.dataframe_info()
 
     # Computing residue and atom features
-    p_features = ProteinFeatures(protein_object, './atom_types.csv')
+    p_features = ProteinFeatures(protein_object, './app/data/atom_types.csv')
     p_features.residue_properties()
     p_features.atom_properties()
     p_features.is_cysteine()
 
     # Computing interactions:
-    p_interactions = Interactions(protein_object, './atom_types.csv')
+    p_interactions = Interactions(protein_object, './app/data/atom_types.csv')
     p_interactions.calculate_interactions()
 
     # Compute layer features (atom and residue properties, and interactions)
-    p_layer = Layer(protein_object, './atom_types.csv')
+    p_layer = Layer(protein_object, './app/data/atom_types.csv')
     p_layer.get_layer_properties()
 
     # 2. EXTRACT THE SITE LABELS OF THE TEMPLATE
