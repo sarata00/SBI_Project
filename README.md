@@ -1,6 +1,6 @@
 SBI Project 2022-23
 
-Program Name
+Bind-Pred program
 
 #### Authors
 Alexandre Casadesús
@@ -12,13 +12,13 @@ Sara Tolosa Alarcón
 
 # Introduction
 
-"Program name" is a machine learning predictor of protein ligand binding site. It takes as input a protein structure ini PDB format and produce as output a list of aminoacids involved in the binding site and a `.cmd`file that allows us to visualize the predicted binding site with a molecular graphic software such as Chimera.
+Bind-Pred is a machine learning predictor of protein ligand binding site. It takes as input a protein structure ini PDB format and produce as output a list of aminoacids involved in the binding site and a `.cmd`file that allows us to visualize the predicted binding site with a molecular graphic software such as Chimera.
 
 This program is tested in Linux and macOS using the `bash`command line to execute the program.
 
 # Requeriments
 
-It is reconmendable to create a new enviroment in conda to install all the dependencies and execute the program. This program has been developed using the Python 3.9.12 version. 
+It is reconmendable to create a new enviroment in conda to install all the dependencies and execute the program. This program has been developed using the Python 3.10.8 version. 
 
 
 * [**Biopython**](https://anaconda.org/conda-forge/biopython), The Biopython Project is an international association of developers of freely available Python tools for computational molecular biology.
@@ -29,10 +29,13 @@ It is reconmendable to create a new enviroment in conda to install all the depen
   
 * [**Scikit-learn**](https://scikit-learn.org/stable/install.html), a popular Python library for machine learning tasks such as classification, regression, and clustering. It provides a simple and efficient toolset for building predictive models and analyzing data.
   
-* **Pandas**
-* **bs4**
-* **requests**
-* **tabulate**
+* **Pandas**(), is an open-source data analysis library for the Python programming language. It provides data structures for efficiently storing and manipulating large datasets, as well as tools for analyzing and visualizing the data.
+  
+* **bs4**, another library of Python used for parsing HTML and XML documents, and extracting information from them. It allows us to search, navigate, and modify the parse tree using Python code, making it easier to extract specific information from web pages.
+  
+* **requests**, a Python library used for making HTTP requests, such as GET and POST requests, to web servers. It provides a simple API for sending HTTP requests and handling responses, making it easier to interact with web services and APIs.
+
+* **tabulate**, a Pyhton library used for creating pretty, formatted tables from data in lists or other data structures
 
 
 # Usage
@@ -90,3 +93,8 @@ Once we have all the results, we can visualise the predicted amino acids in a vi
    -> Command line: `open ./chimera.cmd` (in case the script is in the current directory)
 
 
+As a result, the predicted amino acids will appear green.
+
+<p align="center">
+    <img src="https://github.com/sarata00/SBI_Project/blob/main/3bj1_example.png?raw=true" width="600" alt="Bind-Pred image">
+</p>
