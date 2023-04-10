@@ -90,7 +90,7 @@ def main():
 
             if list_homologs_final:
                 
-                sys.stderr.write('Top 20 homologous sequences found:') if options.verbose else None
+                sys.stderr.write('Top 20 homologous sequences found: ') if options.verbose else None
                 sys.stderr.write(f"[{', '.join(list_homologs_final)}]\n") if options.verbose else None        
 
                 # Extract the PDBs of each template
