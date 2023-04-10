@@ -91,7 +91,7 @@ def main():
             if list_homologs_final:
                 
                 sys.stderr.write('Top 20 homologous sequences found:') if options.verbose else None
-                sys.stderr.write(f"{' '.join(list_homologs_final)}\n") if options.verbose else None        
+                sys.stderr.write(f"[{', '.join(list_homologs_final)}]\n") if options.verbose else None        
 
                 # Extract the PDBs of each template
                 pdbl = PDBList()
@@ -117,8 +117,6 @@ def main():
                     #print(chain_directory)
 
                     if os.path.exists(chain_directory):
-                        sys.stderr.write(f"We have created the folder {chain_directory} to store the chains of {pdb_id}\n") 
-                        
                         # now checking if current chain name is in the directory as a pdb chain file
                         template_chain = ''
 
@@ -151,7 +149,9 @@ def main():
 
                 # Concatenating data sets for each chain
                 all_templates_dataset = RandomForestModel().concat_training_data(dataframes_list)
-                print(all_templates_dataset)
+                sys.stderr.write(f"\nTraining set for current chain:\n") if options.verbose else None
+                sys.stderr.write(str(all_templates_dataset)) if options.verbose else None
+                sys.stderr.write('\n') if options.verbose else None
 
                 # Splitting data into train/test
                 X_train, X_test, Y_train, Y_test = RandomForestModel().split_data(all_templates_dataset)
@@ -181,7 +181,7 @@ def main():
                 # Create a list of tuples with the metric names and values
                 if metrics_table:
                     print("The following metrics were obtained from the test data:\n")
-                    print(metrics_table)
+                    print(metrics_table, '\n')
                 else:
                     print("WARNING: metrics could not be obtained.")
                     
@@ -192,8 +192,6 @@ def main():
 
             print(f"No homologs could be retrieved from {fasta_file}, stop the program")
             exit(3)
-    
-    print(rf_models_dict)
 
     ##########################
     #                        #
@@ -201,7 +199,7 @@ def main():
     #                        #
     ##########################
 
-    sys.stderr.write('\n----------------------------------------------------------\n') if options.verbose else None
+    sys.stderr.write('----------------------------------------------------------\n') if options.verbose else None
     sys.stderr.write('Calculating query protein features and making predictions\n') if options.verbose else None
     sys.stderr.write('------------------------------------------------------------\n\n') if options.verbose else None
 
@@ -266,7 +264,7 @@ def main():
             #                        #
             ##########################
             
-            sys.stderr.write(f'\nNOW PREDICTING BINDING SITES ON CURRENT QUERY PROTEIN CHAIN\n') if options.verbose else None
+            sys.stderr.write(f'NOW PREDICTING BINDING SITES ON CURRENT QUERY PROTEIN CHAIN\n') if options.verbose else None
 
             # Checking if name of current chain in keys of rf_models_dict
             for q_chain in rf_models_dict:
@@ -289,10 +287,7 @@ def main():
             #                          #
             ############################
 
-            print(query_chain.dataframe)
-
-            # chimera_cmd_file.write(f'# Chain {query_chain.structure.get_id()}\n')
-           
+            sys.stderr.write(str(query_chain.dataframe)) if options.verbose else None
 
             for index, row in query_chain.dataframe.iterrows():
             # Extract the residue name, number and chain
