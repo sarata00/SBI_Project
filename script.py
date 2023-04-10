@@ -152,13 +152,13 @@ def main():
 
                 # Concatenating data sets for each chain
                 all_templates_dataset = RandomForestModel().concat_training_data(dataframes_list)
-                sys.stderr.write(f"\nTraining set for current chain:\n") if options.verbose else None
+                sys.stderr.write(f"\nAll homologous templates data set for current chain:\n") if options.verbose else None
                 sys.stderr.write(str(all_templates_dataset)) if options.verbose else None
                 sys.stderr.write('\n') if options.verbose else None
 
                 # Splitting data into train/test
                 X_train, X_test, Y_train, Y_test = RandomForestModel().split_data(all_templates_dataset)
-                #print(X_train, X_test, Y_train, Y_test)
+                print(X_train)
                 sys.stderr.write(f"Data successfully split into train and test sets!\n") if options.verbose else None
                 #sys.stderr.write(f"{X_train}\n{Y_train}")
 
@@ -284,13 +284,15 @@ def main():
 
                         sys.stderr.write(f'Binding sites have been successfully predicted!\n\n') if options.verbose else None
 
-                    if not os.path.exists('./query_predictions/'):
-                        os.makedirs('./query_predictions/')
+                    if not os.path.exists(out_dir):
+                        os.makedirs(out_dir)
 
                     query_chain.dataframe.to_csv(out_dir + query_chain.structure.get_id() + '.csv', columns=['prediction'])
 
                     real_binding_site = ExtractBindingSites().extract_binding_sites(file_name[:-5], file_name[4])
-                    binding_sites_real_provisional_chimera.append(real_binding_site)
+                    
+                    if not real_binding_site == None:
+                        binding_sites_real_provisional_chimera.append(real_binding_site)
                     #print(binding_sites_real_provisional_chimera)
 
 
@@ -320,33 +322,33 @@ def main():
 
         selection_pred = ','.join(binding_sites_predicted_chimera)
 
-        for list_ch in binding_sites_real_provisional_chimera:
-            for residue1 in list_ch:
+        chimera_cmd_file.write('# Coloring predicted binding site residues\n')
+        chimera_cmd_file.write(f'color green :{selection_pred}\n')
 
-                resnum = residue1[5:]
-                chain = residue1[0]
+        if len(binding_sites_real_provisional_chimera) > 0:
 
-                binding_sites_real_chimera.append(f'{resnum}.{chain}')
+            for list_ch in binding_sites_real_provisional_chimera:
+                for residue1 in list_ch:
 
-                if f'{resnum}.{chain}' in binding_sites_predicted_chimera:
+                    resnum = residue1[5:]
+                    chain = residue1[0]
 
-                    binding_sites_shared_chimera.append(f'{resnum}.{chain}')
+                    binding_sites_real_chimera.append(f'{resnum}.{chain}')
+
+                    if f'{resnum}.{chain}' in binding_sites_predicted_chimera:
+
+                        binding_sites_shared_chimera.append(f'{resnum}.{chain}')
         
         #print(binding_sites_shared_chimera)
         
-        selection_real = ','.join(binding_sites_real_chimera)
-        selection_shared = ','.join(binding_sites_shared_chimera)
+            selection_real = ','.join(binding_sites_real_chimera)
+            selection_shared = ','.join(binding_sites_shared_chimera)
 
-        #chimera_cmd_file.write(f'select :{selection}\n')
-        chimera_cmd_file.write('# Coloring binding sites\n')
-        chimera_cmd_file.write(f'color green :{selection_pred}\n')
-        chimera_cmd_file.write(f'color red :{selection_real}\n')
-        chimera_cmd_file.write(f'color blue :{selection_shared}\n')
+            chimera_cmd_file.write(f'# Coloring real binding site residues\n')
+            chimera_cmd_file.write(f'color red :{selection_real}\n')
 
-
-        # Retrieve the real binding sites
-        #protein_id = str(protein_object.structure.get_id())[3:7]
-        #chain_id = str(protein_object.structure.get_id())[7]
+            chimera_cmd_file.write(f'# Coloring matching binding site residues\n')
+            chimera_cmd_file.write(f'color blue :{selection_shared}\n')
 
         chimera_cmd_file.close()
 

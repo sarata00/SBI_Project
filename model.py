@@ -52,7 +52,7 @@ class RandomForestModel:
 
           # Read the dataframe, load it as a pandas dataframe and return it
           with open(os.path.join('./template_datasets', filename), 'r') as f:
-            df = pd.read_csv(f)
+            df = pd.read_csv(f, index_col=0)
             return df
 
     # 1. COMPUTE FEATURES OF EACH TEMPLATE
@@ -125,7 +125,7 @@ class RandomForestModel:
   
 
   def split_data(self, train_df):
-    X = train_df.iloc[:, 1:-1]   # Select all the rows and remove first and last columns (residue_name and label)
+    X = train_df.iloc[:, :-1]   # Select all the rows and remove first and last columns (residue_name and label)
     y = train_df.iloc[:, -1]     # Select as target the SITE label on the last column (Label)
 
     # Split the data
@@ -220,7 +220,12 @@ class ExtractBindingSites:
     soup = BeautifulSoup(content, 'html.parser')
 
     # Find the tr tag that contains the specified text
-    bindres_line = soup.find(string='(original residue number in PDB)').parent.parent
+    bindres_info = soup.find(string='(original residue number in PDB)')
+    
+    if bindres_info:
+      bindres_line = bindres_info.parent.parent
+    else:
+      return None
 
     # Get the string containing the residues
     residue_str = bindres_line.text.strip()
