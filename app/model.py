@@ -78,10 +78,8 @@ class RandomForestModel:
     chain_id = str(protein_object.structure.get_id())[7]
 
     list_binding_sites = ExtractBindingSites().extract_binding_sites(protein_id, chain_id)
-    #print(list_binding_sites)
 
     if list_binding_sites:
-      #print(list_binding_sites)
 
       for chain in protein_object.structure.get_chains():
 
@@ -207,44 +205,59 @@ class ExtractBindingSites:
 
   def extract_binding_sites(self, protein_id, chain_id):
 
-    # set up the URL of the BioLip site page
-    url = "https://zhanggroup.org/BioLiP/pdb.cgi?pdb={}&chain={}&bs=BS01".format(protein_id, chain_id)
-
-    # make a request to the page and retrieve the HTML content
-    response = requests.get(url)
-    content = response.content
-
-    # parse the HTML content using BeautifulSoup
-    soup = BeautifulSoup(content, 'html.parser')
-
-    # Find the tr tag that contains the specified text
-    bindres_info = soup.find(string='(original residue number in PDB)')
-    
-    if bindres_info:
-      bindres_line = bindres_info.parent.parent
-    else:
-      return None
-
-    # Get the string containing the residues
-    residue_str = bindres_line.text.strip()
-
-    residues = residue_str.split(')')[1:]
-    residues = residues[0]
-    residues = residues.split(' ')
-
-    # Converting residue names into data frame style
-    residue_symbol = ''
+    # defining list where residues part of binding sites will appear
     final_residues = []
 
-    for residue in residues:
-      res_num = residue[1:]
-      one_let_res = residue[0]
-      three_let_res = convert_residue(one_let_res)
+    # set up the URL of the BioLip site page
+    for i in range(1,9):  
 
-      residue_symbol = str(chain_id + '_' + three_let_res + res_num)
-      final_residues.append(residue_symbol)
+      url = "https://zhanggroup.org/BioLiP/pdb.cgi?pdb={}&chain={}&bs=BS0{}".format(protein_id, chain_id, i)
 
-    return final_residues
+      # make a request to the page and retrieve the HTML content
+      try:
+        response = requests.get(url)
+      except:
+        print('Online BioLip database could not be accessed for current protein chain.')
+        continue
+      
+      content = response.content
+
+      # parse the HTML content using BeautifulSoup
+      soup = BeautifulSoup(content, 'html.parser')
+
+      # Find the tr tag that contains the specified text
+      bindres_info = soup.find(string='(original residue number in PDB)')
+      
+      if bindres_info:
+        bindres_line = bindres_info.parent.parent
+      else:
+        continue
+
+      # Get the string containing the residues
+      residue_str = bindres_line.text.strip()
+
+      residues = residue_str.split(')')[1:]
+      residues = residues[0]
+      residues = residues.split(' ')
+
+      # Converting residue names into data frame style
+      residue_symbol = ''
+      final_residues = []
+
+      for residue in residues:
+        res_num = residue[1:]
+        one_let_res = residue[0]
+        three_let_res = convert_residue(one_let_res)
+
+        residue_symbol = str(chain_id + '_' + three_let_res + res_num)
+        final_residues.append(residue_symbol)
+    
+    if len(final_residues) > 0:
+      return final_residues
+    
+    # If no binding sites are found
+    else:
+      return None
     
 
 

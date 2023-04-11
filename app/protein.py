@@ -124,31 +124,36 @@ class Protein:
   def dataframe_info(self):
 
     # List all residues
-    residue_list = list(self.structure.get_residues())
     residue_names = []
 
-    for residue in residue_list:
+    # Iterate over the structure to obtain the Residue Name
+    for chain in self.structure.get_chains():
 
-      # Iterate over the structure to obtain the Residue Name
-      for chain in self.structure.get_chains():
+      resnums = []
 
-        chain_id = chain.get_id()
+      chain_id = chain.get_id()
+    
+      for resid in chain.get_residues():
       
-        for resid in chain:
-        
-         # Only consider amino acids, and compute it when residue of the list = residue of the structure
-         if Bio.PDB.is_aa(residue, standard=True) and residue == resid: 
+        # Only consider amino acids, and compute it when residue of the list = residue of the structure
+        if Bio.PDB.is_aa(resid, standard=True): 
 
-          resname = residue.get_resname()
-          resnum = residue.get_id()[1]
-
+          resname = resid.get_resname()
+          resnum = resid.get_id()[1]
+          
           res =  chain_id + '_' + resname + str(resnum)
-          residue_names.append(res)
+
+          # This condition avoids alternative PDB formats for residues (we found that some protein PDBs
+          #  had repeated residue numbers and this created problems in the whole program)
+          if resnum not in resnums:
+            residue_names.append(res)
+          
+          resnums.append(resnum)
 
     # Create empty dataframe
     self.dataframe = pd.DataFrame(index=residue_names)
     self.dataframe.index.name = 'residue_name'
-  
+    
 ################################################################################
   # Define neighborhood of residues.
   # Input: -

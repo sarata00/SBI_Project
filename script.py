@@ -1,7 +1,8 @@
+# Importing modules
 import os
 import sys
 import argparse
-import shutil # remove directory with files
+import shutil
 from Bio.PDB import PDBList
 
 from app.protein import Protein
@@ -9,19 +10,23 @@ from app.properties import ProteinFeatures, Interactions, Layer
 from app.BLAST import BLAST
 from app.model import RandomForestModel, ExtractBindingSites
 
-
+# Defining main() function for program to be executed only if name = main
 def main():
 
     # COMMAND FROM COMMAND-LINE
-    parser = argparse.ArgumentParser(description= ' This program does this')
+    parser = argparse.ArgumentParser(description= 'Residue-centered machine learning algorithm that aims to predict binding sites of a given query protein using a training set of homologous proteins of known binding site information.')
 
+    # adding options to command line program execution
+    # -p option is for specifying query protein pdb file
     parser.add_argument('-p', dest = 'protein_file', default = None, required = True, help = 'Path to input PDB file')
+    # -v option is for being verbose
     parser.add_argument('-v', '--verbose', dest = 'verbose', action = 'store_true', default = False, help = 'Print log in stderr') # It saves the var verbose as True, so we can call it if we want to print to Stderr
 
     options = parser.parse_args()
 
+    # defining condition to obtain protein only if it ends with .pdb
     if os.path.isfile(options.protein_file) and options.protein_file.endswith('.pdb'):
-
+        # defining input protein as protein() object
         target_protein = Protein(options.protein_file)
         
         sys.stdout.write(' -----------------------------------\n')
@@ -29,7 +34,7 @@ def main():
         sys.stderr.write('  STARTING PREDICTION OF ' + target_protein.file_name + '    \n')
         sys.stderr.write('                                                             \n')
         sys.stderr.write(' -----------------------------------\n\n')
-
+    # exit program if input is not pdb file
     else:
         sys.stderr.write("PDB file needed")
         exit(3)
@@ -52,6 +57,7 @@ def main():
     # 1.1 BLAST
     ###########
 
+    # defining variable as BLAST() class instance
     templ = BLAST('../BioLip_database/biolip_database')   
 
     # Generating a dictionary where we will store the random forest models obtained for each chain
@@ -68,6 +74,7 @@ def main():
         list_homologs = templ.search_homologs(fasta_file)
         sys.stderr.write(f"\nBLAST results can be found in {templ.out_file}\n\n") if options.verbose else None     
 
+        # if homologs found iterate through each of the homologs (=templates)
         if list_homologs != None:
 
             list_new = []
@@ -78,7 +85,7 @@ def main():
                 if target_protein.protein_id not in str(homolog):
                     list_new.append(homolog)
 
-            # We just need top 20 homologous proteins
+            # We will just use top 40 homologous proteins if there are so many
             if len(list_new) >= 40:
                 list_homologs_final = list_new[:40]
             else:
@@ -88,6 +95,8 @@ def main():
             # 1.2 COMPUTING TEMPLATE FEATURES #
             ###################################
 
+            # if list of final homologs obtained, we proceed to
+            # 3. 
             if list_homologs_final:
                 
                 sys.stderr.write(f'Top {len(list_homologs_final)} homologous sequences found: ') if options.verbose else None
@@ -103,7 +112,8 @@ def main():
 
                     # Extract the first four characters of each PDB ID
                     pdb_id = pdb[:4]
-                
+
+                    # 1. retrieve template whole protein pdb chains files and assign them as Protein instances
                     # Download the PDB file in .ent format
                     f = pdbl.retrieve_pdb_file(pdb_id, pdir = path, file_format="pdb")
 
@@ -118,11 +128,12 @@ def main():
 
                     # Retrieving folder name for this template
                     chain_directory = template.chains_folder_name
-
+                    
                     if os.path.exists(chain_directory):
                         # now checking if current chain name is in the directory as a pdb chain file
                         template_chain = ''
 
+                        # 2. select template chain that equals the homolog found by BLAST and assign it as Protein instance
                         for file_name in os.listdir(chain_directory):
                             if pdb in file_name:
 

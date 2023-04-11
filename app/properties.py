@@ -259,7 +259,8 @@ class Interactions:
 
     # Obtaining a data frame from layer dictionary
     self.layer_df = pd.DataFrame.from_dict(layer_dict, orient='index')
-    self.layer_df.index.name = 'residue_name'         
+    self.layer_df.index.name = 'residue_name'
+    self.layer_df.to_csv('./layer_df.csv')         
 
   ### CALCULATING DISTANCES BETWEEN ATOMS OF 2 RESIDUES
   def calculate_distance(self, atom1, atom2):
