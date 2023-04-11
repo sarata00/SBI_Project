@@ -44,8 +44,6 @@ In order to use the programme, you must first download all the modules and data 
 
 ~~~bash
 python3 script.py -p file.pdb                   # Run the program using a PDB file
-python3 script.py -p path/to/pdb_files          # Run the program in a specific directory
-
 
 python3 script.py -p file.pdb -v                # Use the argument *verbose* to print the standard error
 
