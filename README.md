@@ -71,7 +71,7 @@ Here is an example of how this program works using the structure of the hemoglob
 python3 script.py -p 3bj1.pdb -v
 ~~~
 
-#### 2. Ouputs
+#### 2. Outputs
 Aquí deberíamos poner lo que aparece al poner verbose para que sea más intuitivo? o directamente las predicciones?
 
 * `.csv`
