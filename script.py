@@ -226,7 +226,7 @@ def main():
 
         # (PARENTHESIS) - Creating file for chimera (see much below)
         try:
-            chimera_cmd_file = open("chimera.cmd", "w")
+            chimera_cmd_file = open(f"chimera_{target_protein.protein_id}.cmd", "w")
         except FileExistsError:
             print("File already exists.") # realment aixo no cal pero no se q posar
 
@@ -277,8 +277,6 @@ def main():
 
                 if file_name[:-4] in q_chain:
 
-                    #print(file_name[4])
-
                     predictions = RandomForestModel().get_predictions(query_chain.dataframe, rf_models_dict[q_chain])
                     if predictions:
 
@@ -290,10 +288,13 @@ def main():
                     query_chain.dataframe.to_csv(out_dir + query_chain.structure.get_id() + '.csv', columns=['prediction'])
 
                     real_binding_site = ExtractBindingSites().extract_binding_sites(file_name[:-5], file_name[4])
+
                     
-                    if not real_binding_site == None:
+                    if real_binding_site != None:
+                        print(f"Real binding sites for {target_protein.protein_id} could be retrieved from BioLip. Comparing real vs predicted...\n") if options.verbose else None
                         binding_sites_real_provisional_chimera.append(real_binding_site)
-                    #print(binding_sites_real_provisional_chimera)
+
+ 
 
 
             ############################
@@ -321,6 +322,7 @@ def main():
                     
 
         selection_pred = ','.join(binding_sites_predicted_chimera)
+        print(selection_pred)
 
         chimera_cmd_file.write('# Coloring predicted binding site residues\n')
         chimera_cmd_file.write(f'color green :{selection_pred}\n')
@@ -339,8 +341,6 @@ def main():
 
                         binding_sites_shared_chimera.append(f'{resnum}.{chain}')
         
-        #print(binding_sites_shared_chimera)
-        
             selection_real = ','.join(binding_sites_real_chimera)
             selection_shared = ','.join(binding_sites_shared_chimera)
 
@@ -349,6 +349,7 @@ def main():
 
             chimera_cmd_file.write(f'# Coloring matching binding site residues\n')
             chimera_cmd_file.write(f'color blue :{selection_shared}\n')
+
 
         chimera_cmd_file.close()
 
