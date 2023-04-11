@@ -1,26 +1,18 @@
-import pandas as pd
 import os
 import sys
 import argparse
-import subprocess
-import Bio.PDB
 import shutil # remove directory with files
-from Bio.SeqUtils.ProtParam import ProteinAnalysis, ProtParamData
-from Bio.PDB import NeighborSearch
 from Bio.PDB import PDBList
 
-sys.path.append('./app')
-
-from protein import Protein
-from properties import ProteinFeatures, Interactions, Layer
-from BLAST import BLAST
-from model import RandomForestModel, ExtractBindingSites
+from app.protein import Protein
+from app.properties import ProteinFeatures, Interactions, Layer
+from app.BLAST import BLAST
+from app.model import RandomForestModel, ExtractBindingSites
 
 
 def main():
-    # COMMAND FROM COMMAND-LINE
-    ## name_program.py -p < protein_pdb > -db < biolip_db > (-a < atom_types_file -o < out_file > ??)
 
+    # COMMAND FROM COMMAND-LINE
     parser = argparse.ArgumentParser(description= ' This program does this')
 
     parser.add_argument('-p', dest = 'protein_file', default = None, required = True, help = 'Path to input PDB file')
@@ -32,14 +24,14 @@ def main():
 
         target_protein = Protein(options.protein_file)
         
-        sys.stderr.write(' -----------------------------------\n') if options.verbose else None
-        sys.stderr.write('                                                             \n') if options.verbose else None
-        sys.stderr.write('  STARTING PREDICTION OF ' + target_protein.file_name + '    \n') if options.verbose else None
-        sys.stderr.write('                                                             \n') if options.verbose else None
-        sys.stderr.write(' -----------------------------------\n\n') if options.verbose else None
+        sys.stdout.write(' -----------------------------------\n')
+        sys.stderr.write('                                                             \n')
+        sys.stderr.write('  STARTING PREDICTION OF ' + target_protein.file_name + '    \n')
+        sys.stderr.write('                                                             \n')
+        sys.stderr.write(' -----------------------------------\n\n')
 
     else:
-        print("PDB file needed")
+        sys.stderr.write("PDB file needed")
         exit(3)
 
     ##########################
@@ -60,7 +52,7 @@ def main():
     # 1.1 BLAST
     ###########
 
-    templ = BLAST('../BioLip_database/biolip_database')
+    templ = BLAST('../BioLip_database/biolip_database')   
 
     # Generating a dictionary where we will store the random forest models obtained for each chain
     rf_models_dict = {}
@@ -70,10 +62,11 @@ def main():
 
         chain_name = fasta_file[2:7]
 
-        sys.stderr.write(f"Working on following chain: {fasta_file}\n\n") if options.verbose else None
+        sys.stderr.write(f"Working on following chain: {fasta_file[2:7]}\n")
 
         # BLAST of each chain, the homologous proteins are stored in a list
         list_homologs = templ.search_homologs(fasta_file)
+        sys.stderr.write(f"\nBLAST results can be found in {templ.out_file}\n\n") if options.verbose else None     
 
         if list_homologs != None:
 
@@ -86,8 +79,10 @@ def main():
                     list_new.append(homolog)
 
             # We just need top 20 homologous proteins
-            if len(list_new) >= 20:
-                list_homologs_final = list_new[:20]
+            if len(list_new) >= 40:
+                list_homologs_final = list_new[:40]
+            else:
+                list_homologs_final = list_new
 
             ###################################
             # 1.2 COMPUTING TEMPLATE FEATURES #
@@ -95,11 +90,11 @@ def main():
 
             if list_homologs_final:
                 
-                sys.stderr.write('Top 20 homologous sequences found: ') if options.verbose else None
-                sys.stderr.write(f"[{', '.join(list_homologs_final)}]\n") if options.verbose else None        
+                sys.stderr.write(f'Top {len(list_homologs_final)} homologous sequences found: ') if options.verbose else None
+                sys.stderr.write(f"[{', '.join(list_homologs_final)}]\n\n") if options.verbose else None        
 
                 # Extract the PDBs of each template
-                pdbl = PDBList()
+                pdbl = PDBList(verbose=False)
 
                 # Creating empty list to store data frames
                 dataframes_list = []
@@ -111,7 +106,11 @@ def main():
                 
                     # Download the PDB file in .ent format
                     f = pdbl.retrieve_pdb_file(pdb_id, pdir = path, file_format="pdb")
-                    
+
+                    if not os.path.isfile(f):
+                        sys.stderr.write(f'{pdb} template ignored. Jumping into next one...\n')
+                        continue
+
                     # Obtain chains from PDB file
                     template = Protein(f)
                     template.get_pdb_chains() # this method produces the chain_directory mentioned below
@@ -119,7 +118,6 @@ def main():
 
                     # Retrieving folder name for this template
                     chain_directory = template.chains_folder_name
-                    #print(chain_directory)
 
                     if os.path.exists(chain_directory):
                         # now checking if current chain name is in the directory as a pdb chain file
@@ -137,20 +135,18 @@ def main():
                             sys.stderr.write(template_chain_dataset) if options.verbose else None
 
                         # we delete folder with chains because we want to avoid accumulation of folders
-                        #try:
-                        #    shutil.rmtree(chain_directory)
-                            #print(f"Directory {chain_directory} was successfully removed.")
-                        #except OSError as e:
-                        #    print(f"Error: {chain_directory} : {e.strerror}")
+                        try:
+                            shutil.rmtree(chain_directory)
+                        except OSError as e:
+                            sys.stderr.write(f"Error: {chain_directory} : {e.strerror}")
 
                     else:
-                        print(f"The directory {chain_directory} could not be created, current template will be dismissed.\n") if options.verbose else None
+                        sys.stderr.write(f"The directory {chain_directory} could not be created, current template will be dismissed.\n") if options.verbose else None
                         continue
                     
                     # Appending each data frame 
                     # (and avoid including templates without binding site labels)
                     if type(template_chain_dataset) != str:
-                        print(template_chain_dataset)
                         dataframes_list.append(template_chain_dataset)
 
                 # Concatenating data sets for each chain
@@ -163,9 +159,7 @@ def main():
 
                 # Splitting data into train/test
                 X_train, X_test, Y_train, Y_test = RandomForestModel().split_data(all_templates_dataset)
-                #print(X_train)
                 sys.stderr.write(f"Data successfully split into train and test sets!\n") if options.verbose else None
-                #sys.stderr.write(f"{X_train}\n{Y_train}")
 
                 ###################################
                 # 1.3 GENERATING CLASSIFIER MODEL #
@@ -188,17 +182,17 @@ def main():
                 
                 # Create a list of tuples with the metric names and values
                 if metrics_table:
-                    print("The following metrics were obtained from the test data:\n")
-                    print(metrics_table, '\n')
+                    sys.stderr.write("The following metrics were obtained from the test data:\n")
+                    sys.stderr.write(f'{metrics_table}\n')
                 else:
-                    print("WARNING: metrics could not be obtained.")
+                    sys.stderr.write("WARNING: metrics could not be obtained.")
                     
             else:
-                print(f"Final homologs list could not be retrieved from {fasta_file}, stop the program.")
+                sys.stderr.write(f"Final homologs list could not be retrieved from {fasta_file}, stop the program.")
                 exit(3)
         else:
 
-            print(f"No homologs could be retrieved from {fasta_file}, stop the program")
+            sys.stderr.write(f"No homologs could be retrieved from {fasta_file}, stop the program")
             exit(3)
 
     ##########################
@@ -234,7 +228,7 @@ def main():
         try:
             chimera_cmd_file = open(f"chimera_{target_protein.protein_id}.cmd", "w")
         except FileExistsError:
-            print("File already exists.") # realment aixo no cal pero no se q posar
+            sys.stderr.write("File already exists.") # realment aixo no cal pero no se q posar
 
         sys.stderr.write(f"We have created the folder {query_chain_directory} to store the chains of the query protein {query_pdb_id}\n")
 
@@ -263,7 +257,7 @@ def main():
                 query_chain_layer.get_layer_properties()
 
             except Exception as e:
-                print("Error:", e, file=sys.stderr)
+                sys.stderr.write(f"Error:, {e}, file={sys.stderr}")
                 raise
             
             #sys.stderr.write('Query protein features calculated successfully.\n') if options.verbose else None
@@ -291,15 +285,42 @@ def main():
                     if not os.path.exists(out_dir):
                         os.makedirs(out_dir)
 
-                    query_chain.dataframe.to_csv(out_dir + query_chain.structure.get_id() + '.csv', columns=['prediction'])
-
+                    # EXTRACTING REAL BINDING SITES IF QUERY PROTEIN HAS THEM
                     real_binding_site = ExtractBindingSites().extract_binding_sites(file_name[:-5], file_name[4])
 
-                    
                     if real_binding_site != None:
+
                         sys.stderr.write(f"Real binding sites for {target_protein.protein_id} could be retrieved from BioLip. Comparing real vs predicted...\n") if options.verbose else None
+                        
+                        # Creating column for real class labels
+                        query_chain.dataframe["real_label"] = int(0)
+
                         for element in real_binding_site:
+
+                            # binary classification of real binding site residues in real_label column
+                            for index, row in query_chain.dataframe.iterrows():
+
+                                if element == index:
+                                    query_chain.dataframe.loc[index,'real_label'] = int(1)
+                        
+                            # Appending residues to list that will contain all real binding sites of whole protein
                             binding_sites_real_provisional_chimera.append(element)
+
+                        # Storing dataframe with predictions and real labels
+                        query_chain.dataframe.to_csv(out_dir + query_chain.structure.get_id() + '.csv', columns=['prediction', 'real_label'])
+
+                        # Calculating metrics for query protein prediction for proteins with already known labels
+                        query_chain_metrics_table = RandomForestModel().model_evaluation(query_chain.dataframe["prediction"], query_chain.dataframe["real_label"])
+                            
+                        if query_chain_metrics_table:
+                            sys.stderr.write("Metrics (real vs predicted):\n")
+                            sys.stderr.write(f'\n{query_chain_metrics_table}\n')
+                        else:
+                            sys.stderr.write("WARNING: metrics could not be obtained.")
+                    
+                    else:
+                        # Storing dataframe with only predictions 
+                        query_chain.dataframe.to_csv(out_dir + query_chain.structure.get_id() + '.csv', columns=['prediction'])
                         
 
  
@@ -332,7 +353,6 @@ def main():
                     
 
         selection_pred = ','.join(binding_sites_predicted_chimera)
-        print(selection_pred)
 
         chimera_cmd_file.write('# Coloring predicted binding site residues\n')
         chimera_cmd_file.write(f'color green :{selection_pred}\n')
@@ -366,7 +386,7 @@ def main():
         pred =  ','.join(binding_sites_result)
 
         if binding_sites_result:
-            sys.stdout.write(f'\nPredicted residues:\n{pred} \n')
+            sys.stdout.write(f'\n\nPredicted residues:\n{pred} \n')
         else:
             sys.stdout.write(f'\n{target_protein.protein_id} does not present binding sites.\n')
 
