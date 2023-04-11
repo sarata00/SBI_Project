@@ -2,11 +2,11 @@
 *SBI Project 2022-23*
 
 ### **Authors**
->>>>>>>> Alexandre Casadesús Llimós
+Alexandre Casadesús Llimós
 
->>>>>>>> Laia Fortuny Galindo
+Laia Fortuny Galindo
 
->>>>>>>> Sara Tolosa Alarcón 
+Sara Tolosa Alarcón 
 
 
 ## **Introduction**
