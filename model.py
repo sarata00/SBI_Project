@@ -90,7 +90,7 @@ class RandomForestModel:
 
         for residue in chain:
 
-          if Bio.PDB.is_aa(residue):  # ignore water molecules
+          if Bio.PDB.is_aa(residue, standard=True):  # ignore water molecules
             
             # Obtaining full residue name
             resname = residue.get_resname()

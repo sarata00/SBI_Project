@@ -140,7 +140,7 @@ class Protein:
         for resid in chain:
         
          # Only consider amino acids, and compute it when residue of the list = residue of the structure
-         if Bio.PDB.is_aa(residue) and residue == resid: 
+         if Bio.PDB.is_aa(residue, standard=True) and residue == resid: 
 
           resname = residue.get_resname()
           resnum = residue.get_id()[1]
@@ -174,7 +174,7 @@ class Protein:
     # Avoid repeated neighbors and the residue itself. Also avoid H20 molecules
     for neighbor in list_neighborhood:
 
-      if (neighbor not in neighborhood_set and neighbor != residue) and (Bio.PDB.is_aa(residue) and Bio.PDB.is_aa(neighbor)):
+      if (neighbor not in neighborhood_set and neighbor != residue) and (Bio.PDB.is_aa(residue, standard=True) and Bio.PDB.is_aa(neighbor, standard=True)):
 
             neighborhood_set.add(neighbor)
     

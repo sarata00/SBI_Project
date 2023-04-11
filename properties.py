@@ -72,7 +72,7 @@ class ProteinFeatures:
       # Iterating through residues of the protein
       for residue in chain:
 
-        if Bio.PDB.is_aa(residue):  # ignore water molecules
+        if Bio.PDB.is_aa(residue, standard=True):  # ignore water molecules
         
           # Defining what we call 'res' for the dataframe rows
           resname = residue.get_resname()
