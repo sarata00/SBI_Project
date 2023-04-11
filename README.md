@@ -3,16 +3,16 @@ SBI Project 2022-23
 Bind-Pred program
 
 #### Authors
-Alexandre Casadesús
+Alexandre Casadesús Llimós
 
-Laia Fortuny
+Laia Fortuny Galindo
 
 Sara Tolosa Alarcón 
 
 
 # Introduction
 
-Bind-Pred is a machine learning predictor of protein ligand binding site. It takes as input a protein structure ini PDB format and produce as output a list of aminoacids involved in the binding site and a `.cmd`file that allows us to visualize the predicted binding site with a molecular graphic software such as Chimera.
+Bind-Pred is a machine learning predictor of protein ligand binding site. It takes as input a protein structure ini PDB format and produce as output a list of aminoacids involved in the binding site and a `.cmd` file that allows us to visualize the predicted binding site with a molecular graphic software such as Chimera.
 
 This program is tested in Linux and macOS using the `bash`command line to execute the program.
 
@@ -44,8 +44,6 @@ In order to use the programme, you must first download all the modules and data 
 
 ~~~bash
 python3 script.py -p file.pdb                   # Run the program using a PDB file
-python3 script.py -p path/to/pdb_files          # Run the program in a specific directory
-
 
 python3 script.py -p file.pdb -v                # Use the argument *verbose* to print the standard error
 
@@ -75,7 +73,7 @@ python3 script.py -p 3bj1.pdb -v
 Aquí deberíamos poner lo que aparece al poner verbose para que sea más intuitivo? o directamente las predicciones?
 
 * `.csv`
-* `chimera.cmd`  
+* `chimera_3bj1.cmd`  
 
 #### 3. Visualize on Chimera
 Once we have all the results, we can visualise the predicted amino acids in a visualiser such as Chimera. To do this we have to:
