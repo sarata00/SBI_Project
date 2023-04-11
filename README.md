@@ -54,9 +54,9 @@ Once the programme has been run, it will take some time to make predictions. As 
 * **FASTA files**: this files will be generated for each chain of the protein. If it consists of a single polypeptide chain, only one file will be created.
 * **Chain folder**: a folder that contains separately the structure in PDB format each of the chains that make up the target protein.
 * **Templates folder**: here we can find the BLAST results for each of the chains that are part of the target protein and the structures of these homologous proteins that have been found (in `.ent` format).
-* **Template_dataset folder**:
+* **Template_dataset folder**: it stores all for each homolog its dataframe with all the residues of the protein as records (rows) and 27 features as columns. Where the first 14 features are about the residue being considered, and the next 13 features are of the first shell of residues considered. The last column is the label that indicates if it is a residue that forms part of the binding site (1) or not (0).
 * **Query_predictions**: for each chain of the protein a `.csv`file will be created with two columns: 'residue_name' and 'prediction'. The first one (residue_name) contains the residue information and the second one (prediction) the results of the prediction for each residue, represented as 1 if it is part of the binding site or 0 if not.
-* **`chimera.cmd`file**: contains the necessary commands to select and colour the amino acids that are part of the binding site using Chimera.
+* **`chimera_pdbID.cmd`file**: contains the necessary commands to select and colour the amino acids that are part of the binding site using Chimera.
 
 
 ## Example: 3bj1.pdb
@@ -70,9 +70,13 @@ python3 script.py -p 3bj1.pdb -v
 ~~~
 
 #### 2. Outputs
-Aquí deberíamos poner lo que aparece al poner verbose para que sea más intuitivo? o directamente las predicciones?
 
+<<<<<<< HEAD
+*
+* `3bj1_dataset.csv` file
+=======
 * `.csv`
+>>>>>>> b631322749ee6643f55ff5ff7602377f6f0a532d
 * `chimera_3bj1.cmd`  
 
 #### 3. Visualize on Chimera
@@ -88,7 +92,7 @@ Once we have all the results, we can visualise the predicted amino acids in a vi
    
    -> *File...Open from the menu and file browse to locate the file*
 
-   -> Command line: `open ./chimera.cmd` (in case the script is in the current directory)
+   -> Command line: `open ./chimera_3bj1.cmd`
 
 
 As a result, the predicted amino acids will appear green.
@@ -96,3 +100,5 @@ As a result, the predicted amino acids will appear green.
 <p align="center">
     <img src="https://github.com/sarata00/SBI_Project/blob/main/3bj1_example.png?raw=true" width="600" alt="Bind-Pred image">
 </p>
+
+
