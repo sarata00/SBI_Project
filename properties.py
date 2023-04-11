@@ -35,7 +35,7 @@ class ProteinFeatures:
       
       for residue in chain:
 
-        if residue.get_resname() != 'HOH' and  Bio.PDB.is_aa(residue):  # ignore water molecules
+        if residue.get_resname() != 'HOH' and  Bio.PDB.is_aa(residue, standard=True):  # ignore water molecules
 
           resname = residue.get_resname()
           resnum = residue.get_id()[1]
@@ -127,7 +127,7 @@ class ProteinFeatures:
         if residue.get_resname() == 'CYS':
           self.protein.dataframe.loc[res,'Cysteine'] = 1
           
-        elif Bio.PDB.is_aa(residue):
+        elif Bio.PDB.is_aa(residue, standard=True):
           self.protein.dataframe.loc[res,'Cysteine'] = 0
 
         else:
@@ -170,7 +170,7 @@ class Interactions:
 
       for residue1 in chain:
 
-        if Bio.PDB.is_aa(residue1):  # ignore water molecules
+        if Bio.PDB.is_aa(residue1, standard=True):  # ignore water molecules
 
           # appending residue to redundancy control
           redundancy_control.append(residue1)   
@@ -190,7 +190,7 @@ class Interactions:
 
           for residue2 in set_neigh:
 
-            if Bio.PDB.is_aa(residue2) and residue2 not in redundancy_control:
+            if Bio.PDB.is_aa(residue2, standard=True) and residue2 not in redundancy_control:
 
               # Get the chain ID of the residue
               chain2_id = residue2.get_parent().id  

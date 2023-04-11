@@ -68,6 +68,8 @@ def main():
     # Download the fasta files of our target protein (a fasta file per chain)
     for fasta_file in target_protein.write_fasta_file(): 
 
+        chain_name = fasta_file[2:7]
+
         sys.stderr.write(f"Working on following chain: {fasta_file}\n\n") if options.verbose else None
 
         # BLAST of each chain, the homologous proteins are stored in a list
@@ -135,11 +137,11 @@ def main():
                             sys.stderr.write(template_chain_dataset) if options.verbose else None
 
                         # we delete folder with chains because we want to avoid accumulation of folders
-                        try:
-                            shutil.rmtree(chain_directory)
+                        #try:
+                        #    shutil.rmtree(chain_directory)
                             #print(f"Directory {chain_directory} was successfully removed.")
-                        except OSError as e:
-                            print(f"Error: {chain_directory} : {e.strerror}")
+                        #except OSError as e:
+                        #    print(f"Error: {chain_directory} : {e.strerror}")
 
                     else:
                         print(f"The directory {chain_directory} could not be created, current template will be dismissed.\n") if options.verbose else None
@@ -148,17 +150,20 @@ def main():
                     # Appending each data frame 
                     # (and avoid including templates without binding site labels)
                     if type(template_chain_dataset) != str:
+                        print(template_chain_dataset)
                         dataframes_list.append(template_chain_dataset)
 
                 # Concatenating data sets for each chain
                 all_templates_dataset = RandomForestModel().concat_training_data(dataframes_list)
+                all_templates_dataset.to_csv('./template_datasets/' + chain_name + '_dataset' + '.csv')
+
                 sys.stderr.write(f"\nAll homologous templates data set for current chain:\n") if options.verbose else None
                 sys.stderr.write(str(all_templates_dataset)) if options.verbose else None
                 sys.stderr.write('\n') if options.verbose else None
 
                 # Splitting data into train/test
                 X_train, X_test, Y_train, Y_test = RandomForestModel().split_data(all_templates_dataset)
-                print(X_train)
+                #print(X_train)
                 sys.stderr.write(f"Data successfully split into train and test sets!\n") if options.verbose else None
                 #sys.stderr.write(f"{X_train}\n{Y_train}")
 
@@ -211,6 +216,7 @@ def main():
     binding_sites_real_provisional_chimera = []
     binding_sites_real_chimera = []
     binding_sites_shared_chimera = []
+    binding_sites_result = []
     
     ##########################################
     # 3.1 FEATURES FOR EACH CHAIN SEPARATELY #
@@ -291,8 +297,10 @@ def main():
 
                     
                     if real_binding_site != None:
-                        print(f"Real binding sites for {target_protein.protein_id} could be retrieved from BioLip. Comparing real vs predicted...\n") if options.verbose else None
-                        binding_sites_real_provisional_chimera.append(real_binding_site)
+                        sys.stderr.write(f"Real binding sites for {target_protein.protein_id} could be retrieved from BioLip. Comparing real vs predicted...\n") if options.verbose else None
+                        for element in real_binding_site:
+                            binding_sites_real_provisional_chimera.append(element)
+                        
 
  
 
@@ -319,6 +327,8 @@ def main():
                     
                     # format must be for example 'select :10.A'
                     binding_sites_predicted_chimera.append(f'{resnum}.{chain}') 
+                    # Generate the result to be printed
+                    binding_sites_result.append(res)
                     
 
         selection_pred = ','.join(binding_sites_predicted_chimera)
@@ -329,17 +339,17 @@ def main():
 
         if len(binding_sites_real_provisional_chimera) > 0:
 
-            for list_ch in binding_sites_real_provisional_chimera:
-                for residue1 in list_ch:
+            for residue1 in binding_sites_real_provisional_chimera:
+                #for residue1 in list_ch:
 
-                    resnum = residue1[5:]
-                    chain = residue1[0]
+                resnum = residue1[5:]
+                chain = residue1[0]
 
-                    binding_sites_real_chimera.append(f'{resnum}.{chain}')
+                binding_sites_real_chimera.append(f'{resnum}.{chain}')
 
-                    if f'{resnum}.{chain}' in binding_sites_predicted_chimera:
+                if f'{resnum}.{chain}' in binding_sites_predicted_chimera:
 
-                        binding_sites_shared_chimera.append(f'{resnum}.{chain}')
+                    binding_sites_shared_chimera.append(f'{resnum}.{chain}')
         
             selection_real = ','.join(binding_sites_real_chimera)
             selection_shared = ','.join(binding_sites_shared_chimera)
@@ -352,6 +362,13 @@ def main():
 
 
         chimera_cmd_file.close()
+
+        pred =  ','.join(binding_sites_result)
+
+        if binding_sites_result:
+            sys.stdout.write(f'\nPredicted residues:\n{pred} \n')
+        else:
+            sys.stdout.write(f'\n{target_protein.protein_id} does not present binding sites.\n')
 
         sys.stderr.write(f'\nPrediction tables can be found in {out_dir} \n') if options.verbose else None
 

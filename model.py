@@ -83,6 +83,7 @@ class RandomForestModel:
     #print(list_binding_sites)
 
     if list_binding_sites:
+      #print(list_binding_sites)
 
       for chain in protein_object.structure.get_chains():
 
@@ -91,7 +92,6 @@ class RandomForestModel:
         for residue in chain:
 
           if Bio.PDB.is_aa(residue, standard=True):  # ignore water molecules
-            
             # Obtaining full residue name
             resname = residue.get_resname()
             resnum = residue.get_id()[1]
